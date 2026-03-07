@@ -18,6 +18,7 @@ import { AuditLogsModal } from './components/AuditLogsModal';
 import { NewsTicker } from './components/NewsTicker';
 import { ManageNewsModal } from './components/ManageNewsModal';
 import { TreasuryModal } from './components/TreasuryModal';
+import { FamilyAssignmentModal } from './components/FamilyAssignmentModal';
 import { formatCurrency, formatDisplayDate, getMemberStatus, parseMonthStr, formatMonthStr, downloadCSV, compressImage, generatePDF } from './utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, addMonths } from 'date-fns';
@@ -70,6 +71,7 @@ export default function SanduqApp() {
   const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
   const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
+  const [isFamilyAssignOpen, setIsFamilyAssignOpen] = useState(false);
   const [isAddMemberMode, setIsAddMemberMode] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberPhone, setNewMemberPhone] = useState('');
@@ -321,6 +323,33 @@ export default function SanduqApp() {
     });
   };
 
+  const handleFamilyAssign = async (headId: string, dependentIds: string[]) => {
+    await withSaving(async () => {
+      // Clear old dependents of this head
+      const oldDeps = members.filter(m => m.headMemberId === headId);
+      for (const dep of oldDeps) {
+        if (!dependentIds.includes(dep.id)) {
+          const updated = { ...dep, headMemberId: undefined };
+          await db.upsertMember(updated);
+        }
+      }
+      // Set new dependents
+      for (const depId of dependentIds) {
+        const m = members.find(x => x.id === depId);
+        if (m) {
+          const updated = { ...m, headMemberId: headId };
+          await db.upsertMember(updated);
+        }
+      }
+      // Refresh
+      const fresh = await db.getMembers();
+      setMembers(fresh);
+      const head = members.find(m => m.id === headId);
+      await logAction('تعيين عائلة', `تعيين ${dependentIds.length} تابع لبيت ${head?.name}`);
+    });
+    setIsFamilyAssignOpen(false);
+  };
+
   const handleExportMembersPDF = () => {
     const headers = ["الاسم", "تاريخ الانضمام", "مدفوع لغاية", "المجموع", "الحالة"];
     const rows = members.map(m => { const s = getMemberStatus(m.paidUntil); return [m.name, m.joinDate || '-', formatDisplayDate(m.paidUntil), formatCurrency(m.totalPaid), s.text]; });
@@ -522,6 +551,7 @@ export default function SanduqApp() {
                     <h2 className="text-sm sm:text-base font-semibold text-foreground">قائمة الأعضاء <span className="text-muted-foreground font-normal">({filteredMembers.length})</span></h2>
                     {canEdit && (
                       <div className="flex gap-1">
+                        <button onClick={() => setIsFamilyAssignOpen(true)} className="h-8 px-2.5 bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition flex items-center gap-1 text-xs font-medium"><Users size={13} /><span className="hidden sm:inline"> عائلات</span></button>
                         <button onClick={() => setIsRemindersModalOpen(true)} className="h-8 px-2.5 bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))] rounded-md hover:bg-[hsl(var(--warning))]/20 transition flex items-center gap-1 text-xs font-medium"><Bell size={13} /><span className="hidden sm:inline"> تذكير</span></button>
                         <button onClick={handleExportMembersPDF} className="h-8 w-8 bg-destructive/5 text-destructive rounded-md hover:bg-destructive/10 transition flex items-center justify-center"><Printer size={14} /></button>
                         <button onClick={handleExportMembers} className="h-8 w-8 bg-[hsl(var(--success))]/5 text-[hsl(var(--success))] rounded-md hover:bg-[hsl(var(--success))]/10 transition hidden sm:flex items-center justify-center"><FileSpreadsheet size={14} /></button>
@@ -706,6 +736,7 @@ export default function SanduqApp() {
       <EditMemberModal isOpen={isEditMemberModalOpen} onClose={() => setIsEditMemberModalOpen(false)} member={editingMember} onUpdate={handleUpdateMember} allMembers={members} />
       <RemindersModal isOpen={isRemindersModalOpen} onClose={() => setIsRemindersModalOpen(false)} members={members} onMarkAsSent={handleMarkReminderSent} />
       <TreasuryModal isOpen={isTreasuryOpen} onClose={() => setIsTreasuryOpen(false)} transactions={treasuryTx} onAddTransaction={handleAddTreasuryTx} onDeleteTransaction={handleDeleteTreasuryTx} canEdit={canEdit} />
+      <FamilyAssignmentModal isOpen={isFamilyAssignOpen} onClose={() => setIsFamilyAssignOpen(false)} members={members} onAssign={handleFamilyAssign} />
 
       <footer className="text-center py-4 text-[11px] text-muted-foreground border-t border-border mt-6">
         جميع الحقوق محفوظة لدى المبرمج مالك ادريس
