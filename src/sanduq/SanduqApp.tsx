@@ -323,6 +323,33 @@ export default function SanduqApp() {
     });
   };
 
+  const handleFamilyAssign = async (headId: string, dependentIds: string[]) => {
+    await withSaving(async () => {
+      // Clear old dependents of this head
+      const oldDeps = members.filter(m => m.headMemberId === headId);
+      for (const dep of oldDeps) {
+        if (!dependentIds.includes(dep.id)) {
+          const updated = { ...dep, headMemberId: undefined };
+          await db.upsertMember(updated);
+        }
+      }
+      // Set new dependents
+      for (const depId of dependentIds) {
+        const m = members.find(x => x.id === depId);
+        if (m) {
+          const updated = { ...m, headMemberId: headId };
+          await db.upsertMember(updated);
+        }
+      }
+      // Refresh
+      const fresh = await db.getMembers();
+      setMembers(fresh);
+      const head = members.find(m => m.id === headId);
+      await logAction('تعيين عائلة', `تعيين ${dependentIds.length} تابع لبيت ${head?.name}`);
+    });
+    setIsFamilyAssignOpen(false);
+  };
+
   const handleExportMembersPDF = () => {
     const headers = ["الاسم", "تاريخ الانضمام", "مدفوع لغاية", "المجموع", "الحالة"];
     const rows = members.map(m => { const s = getMemberStatus(m.paidUntil); return [m.name, m.joinDate || '-', formatDisplayDate(m.paidUntil), formatCurrency(m.totalPaid), s.text]; });
