@@ -395,19 +395,33 @@ export default function SanduqApp() {
 
   const filteredMembers = members.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()) && (filterMonth === 'all' || m.paidUntil === filterMonth));
 
+  // Family color palette using HSL semantic tokens
+  const familyColors = [
+    { bg: 'hsl(262 83% 58% / 0.08)', border: 'hsl(262 83% 58% / 0.25)', text: 'hsl(262 83% 58%)', headerBg: 'hsl(262 83% 58% / 0.12)' },
+    { bg: 'hsl(175 70% 41% / 0.08)', border: 'hsl(175 70% 41% / 0.25)', text: 'hsl(175 70% 41%)', headerBg: 'hsl(175 70% 41% / 0.12)' },
+    { bg: 'hsl(330 85% 60% / 0.08)', border: 'hsl(330 85% 60% / 0.25)', text: 'hsl(330 85% 60%)', headerBg: 'hsl(330 85% 60% / 0.12)' },
+    { bg: 'hsl(38 92% 50% / 0.08)', border: 'hsl(38 92% 50% / 0.25)', text: 'hsl(38 92% 50%)', headerBg: 'hsl(38 92% 50% / 0.12)' },
+    { bg: 'hsl(207 90% 54% / 0.08)', border: 'hsl(207 90% 54% / 0.25)', text: 'hsl(207 90% 54%)', headerBg: 'hsl(207 90% 54% / 0.12)' },
+    { bg: 'hsl(160 84% 39% / 0.08)', border: 'hsl(160 84% 39% / 0.25)', text: 'hsl(160 84% 39%)', headerBg: 'hsl(160 84% 39% / 0.12)' },
+    { bg: 'hsl(14 90% 55% / 0.08)', border: 'hsl(14 90% 55% / 0.25)', text: 'hsl(14 90% 55%)', headerBg: 'hsl(14 90% 55% / 0.12)' },
+    { bg: 'hsl(280 60% 50% / 0.08)', border: 'hsl(280 60% 50% / 0.25)', text: 'hsl(280 60% 50%)', headerBg: 'hsl(280 60% 50% / 0.12)' },
+    { bg: 'hsl(220 70% 50% / 0.08)', border: 'hsl(220 70% 50% / 0.25)', text: 'hsl(220 70% 50%)', headerBg: 'hsl(220 70% 50% / 0.12)' },
+    { bg: 'hsl(350 80% 50% / 0.08)', border: 'hsl(350 80% 50% / 0.25)', text: 'hsl(350 80% 50%)', headerBg: 'hsl(350 80% 50% / 0.12)' },
+  ];
+
   // Group members by family: heads first, then their dependents
   const groupedMembers = (() => {
     const heads = filteredMembers.filter(m => !m.headMemberId);
     const dependents = filteredMembers.filter(m => m.headMemberId);
-    const result: { head: Member | null; members: Member[] }[] = [];
-    heads.forEach(h => {
+    const result: { head: Member | null; members: Member[]; color: typeof familyColors[0] }[] = [];
+    heads.forEach((h, i) => {
       const deps = dependents.filter(d => d.headMemberId === h.id);
-      result.push({ head: h, members: [h, ...deps] });
+      result.push({ head: h, members: [h, ...deps], color: familyColors[i % familyColors.length] });
     });
     // Orphan dependents (head not in filtered list)
     const usedDepIds = new Set(result.flatMap(g => g.members.map(m => m.id)));
     const orphans = dependents.filter(d => !usedDepIds.has(d.id));
-    if (orphans.length > 0) result.push({ head: null, members: orphans });
+    if (orphans.length > 0) result.push({ head: null, members: orphans, color: familyColors[result.length % familyColors.length] });
     return result;
   })();
 
