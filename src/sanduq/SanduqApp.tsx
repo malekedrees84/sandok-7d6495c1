@@ -240,9 +240,9 @@ export default function SanduqApp() {
   const recentTransactions = [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5).map(t => ({ ...t, memberName: members.find(m => m.id === t.memberId)?.name || 'عضو محذوف' }));
 
   const getCategoryStyle = (category: string) => {
-    if (category.includes('فرح')) return 'bg-pink-100 text-pink-700';
-    if (category.includes('عزاء')) return 'bg-gray-100 text-gray-700';
-    return 'bg-blue-100 text-blue-700';
+    if (category.includes('فرح')) return 'bg-pink-50 text-pink-700 border border-pink-200';
+    if (category.includes('عزاء')) return 'bg-secondary text-muted-foreground border border-border';
+    return 'bg-primary/5 text-primary border border-primary/20';
   };
 
   const handleExportFinancialsPDF = () => {
@@ -257,61 +257,59 @@ export default function SanduqApp() {
   const filteredMembers = members.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()) && (filterMonth === 'all' || m.paidUntil === filterMonth));
 
   return (
-    <div className="min-h-screen font-sans text-foreground pb-20 sm:pb-10 relative transition-colors duration-300 bg-background">
-      {/* HEADER */}
-      <header className="bg-card shadow-sm sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="bg-primary p-1.5 sm:p-2 rounded-lg text-primary-foreground shadow-lg shrink-0"><Wallet size={20} /></div>
+    <div className="min-h-screen font-sans text-foreground pb-20 sm:pb-6 relative transition-colors duration-200 bg-background">
+      {/* HEADER - Fluent Mica style */}
+      <header className="fluent-acrylic border-b border-border sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-12 sm:h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shrink-0">
+              <Wallet size={16} />
+            </div>
             <div className="min-w-0">
-              <h1 className="text-base sm:text-xl font-bold text-foreground leading-none truncate">صندوق العائلة</h1>
-              <div className="flex items-center gap-1 mt-0.5">
-                <span className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
-                  {isSaving && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>}
-                  <span className={`relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 ${isSaving ? 'bg-yellow-500' : isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                </span>
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">{isSaving ? 'مزامنة...' : isOnline ? 'متصل' : 'بدون نت'}</p>
+              <h1 className="text-sm sm:text-base font-semibold text-foreground leading-none truncate">صندوق العائلة</h1>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`inline-flex rounded-full h-1.5 w-1.5 ${isSaving ? 'bg-[hsl(var(--warning))]' : isOnline ? 'bg-[hsl(var(--success))]' : 'bg-destructive'}`} />
+                <p className="text-[10px] text-muted-foreground">{isSaving ? 'مزامنة...' : isOnline ? 'متصل' : 'غير متصل'}</p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-3">
-            <button onClick={() => setIsPublicInquiryOpen(true)} className="p-1.5 sm:p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full transition flex items-center gap-1.5 sm:px-3 hover:shadow-md" title="افحص اشتراكك">
-              <UserCheck size={16} className="sm:w-[18px] sm:h-[18px]" /><span className="hidden sm:inline text-xs font-bold">افحص حالتك</span>
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <button onClick={() => setIsPublicInquiryOpen(true)} className="h-8 px-2 sm:px-3 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition flex items-center gap-1.5" title="افحص اشتراكك">
+              <UserCheck size={14} /><span className="hidden sm:inline">افحص حالتك</span>
             </button>
-            <button onClick={() => { if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="p-1.5 sm:p-2 text-primary bg-primary/10 hover:bg-primary/20 rounded-full transition hidden sm:flex"><Share2 size={18} /></button>
+            <button onClick={() => { if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition hidden sm:flex items-center justify-center"><Share2 size={15} /></button>
             {isAdmin && (
               <>
-                <button onClick={() => setIsAuditLogsOpen(true)} className="p-1.5 sm:p-2 text-muted-foreground hover:text-purple-600 hover:bg-purple-50 rounded-full transition hidden sm:flex"><ShieldCheck size={18} /></button>
-                <button onClick={() => setIsSettingsOpen(true)} className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-gray-100 rounded-full transition hidden sm:flex"><Settings size={18} /></button>
+                <button onClick={() => setIsAuditLogsOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition hidden sm:flex items-center justify-center"><ShieldCheck size={15} /></button>
+                <button onClick={() => setIsSettingsOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition hidden sm:flex items-center justify-center"><Settings size={15} /></button>
               </>
             )}
-            <button onClick={() => isLoggedIn ? handleUserLogout() : setIsLoginModalOpen(true)} className={`flex items-center gap-1 px-2 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition ${isLoggedIn ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-gray-100 text-muted-foreground hover:bg-gray-200'}`}>
-              {isLoggedIn ? <><Unlock size={14} /><span className="hidden xs:inline">خروج</span></> : <><Lock size={14} /><span className="hidden xs:inline">دخول</span></>}
+            <button onClick={() => isLoggedIn ? handleUserLogout() : setIsLoginModalOpen(true)} className={`h-8 px-2.5 sm:px-3 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${isLoggedIn ? 'text-destructive bg-destructive/10 hover:bg-destructive/15' : 'text-muted-foreground bg-secondary hover:bg-accent'}`}>
+              {isLoggedIn ? <><Unlock size={13} /><span className="hidden xs:inline">خروج</span></> : <><Lock size={13} /><span className="hidden xs:inline">دخول</span></>}
             </button>
-            {/* Mobile menu button for admin */}
             {isAdmin && (
-              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-1.5 text-muted-foreground hover:text-foreground rounded-full transition sm:hidden">
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition sm:hidden flex items-center justify-center">
+                {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
               </button>
             )}
           </div>
         </div>
-        {/* Mobile dropdown menu */}
+        {/* Mobile dropdown */}
         {mobileMenuOpen && isAdmin && (
-          <div className="sm:hidden bg-card border-t border-border px-4 py-3 space-y-2 animate-fade-in shadow-md">
-            <button onClick={() => { setMobileMenuOpen(false); if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-foreground hover:bg-gray-50 rounded-lg transition"><Share2 size={18} /> مشاركة الرابط</button>
-            <button onClick={() => { setMobileMenuOpen(false); setIsAuditLogsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-foreground hover:bg-gray-50 rounded-lg transition"><ShieldCheck size={18} /> سجل العمليات</button>
-            <button onClick={() => { setMobileMenuOpen(false); setIsSettingsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-foreground hover:bg-gray-50 rounded-lg transition"><Settings size={18} /> الإعدادات</button>
+          <div className="sm:hidden border-t border-border px-3 py-2 space-y-0.5 animate-fade-in bg-card">
+            <button onClick={() => { setMobileMenuOpen(false); if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition"><Share2 size={15} /> مشاركة</button>
+            <button onClick={() => { setMobileMenuOpen(false); setIsAuditLogsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition"><ShieldCheck size={15} /> سجل العمليات</button>
+            <button onClick={() => { setMobileMenuOpen(false); setIsSettingsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition"><Settings size={15} /> الإعدادات</button>
           </div>
         )}
       </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
-        {/* TABS */}
-        <div className="flex bg-gray-100 p-1 rounded-xl w-full overflow-x-auto no-scrollbar">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 space-y-3 sm:space-y-5">
+        {/* TABS - Windows 11 Pivot style */}
+        <div className="flex gap-0.5 bg-secondary/60 p-0.5 rounded-lg w-full">
           {(['dashboard', 'members', 'expenses'] as const).map(t => (
-            <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition whitespace-nowrap ${activeTab === t ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
-              {t === 'dashboard' ? <LayoutDashboard size={16} /> : t === 'members' ? <Users size={16} /> : <Receipt size={16} />}
+            <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-150 ${activeTab === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-card/50'}`}>
+              {t === 'dashboard' ? <LayoutDashboard size={15} /> : t === 'members' ? <Users size={15} /> : <Receipt size={15} />}
               {t === 'dashboard' ? 'الرئيسية' : t === 'members' ? 'الأعضاء' : 'المصروفات'}
             </button>
           ))}
@@ -319,63 +317,65 @@ export default function SanduqApp() {
 
         {/* DASHBOARD */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-4 sm:space-y-6 animate-fade-in">
+          <div className="space-y-3 sm:space-y-5 animate-fluent-reveal">
             <NewsTicker announcements={announcements} canEdit={canEdit} onEdit={() => setIsNewsModalOpen(true)} direction={tickerDirection} duration={tickerDuration} />
             
-            {/* Stat cards - 2 cols on mobile, 4 on desktop */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-              <StatCard title="الرصيد" value={formatCurrency(netBalance)} icon={<span className="text-xl sm:text-2xl font-bold">₪</span>} colorClass="bg-gradient-to-br from-emerald-50 to-white border-emerald-100" trend="متوفر" />
-              <StatCard title="التحصيلات" value={formatCurrency(totalIncome)} icon={<TrendingUp size={20} />} />
-              <StatCard title="المصروفات" value={formatCurrency(totalExpenses_val)} icon={<TrendingDown size={20} />} colorClass="bg-red-50 border-red-100" />
-              <StatCard title="الزوار" value={visitorLogs.length.toString()} icon={<Eye size={20} />} />
+            {/* Stat cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+              <StatCard title="الرصيد" value={formatCurrency(netBalance)} icon={<span className="text-lg sm:text-xl font-bold">₪</span>} trend="متوفر" />
+              <StatCard title="التحصيلات" value={formatCurrency(totalIncome)} icon={<TrendingUp size={18} />} />
+              <StatCard title="المصروفات" value={formatCurrency(totalExpenses_val)} icon={<TrendingDown size={18} />} />
+              <StatCard title="الزوار" value={visitorLogs.length.toString()} icon={<Eye size={18} />} />
             </div>
             
             {/* Chart + Quick actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div className="lg:col-span-2 bg-card p-4 sm:p-6 rounded-2xl shadow-sm border border-border">
-                <div className="flex justify-between items-center mb-4 sm:mb-6">
-                  <h3 className="text-sm sm:text-lg font-bold text-foreground">التقرير المالي</h3>
-                  <div className="flex gap-1 sm:gap-2">
-                    <button onClick={() => setIsMonthlyReportOpen(true)} className="text-xs sm:text-sm text-primary hover:bg-primary/10 px-2 sm:px-3 py-1 rounded-lg flex items-center gap-1 transition"><FileBarChart size={14} /> <span className="hidden sm:inline">جدول</span></button>
-                    {canEdit && <button onClick={handleExportFinancialsPDF} className="text-xs sm:text-sm text-red-600 hover:bg-red-50 px-2 sm:px-3 py-1 rounded-lg flex items-center gap-1 transition"><Printer size={14} /> <span className="hidden sm:inline">PDF</span></button>}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="lg:col-span-2 fluent-card p-4 sm:p-5">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm sm:text-base font-semibold text-foreground">التقرير المالي</h3>
+                  <div className="flex gap-1">
+                    <button onClick={() => setIsMonthlyReportOpen(true)} className="h-7 px-2.5 text-[11px] font-medium text-primary hover:bg-primary/5 rounded-md flex items-center gap-1 transition"><FileBarChart size={13} /> <span className="hidden sm:inline">جدول</span></button>
+                    {canEdit && <button onClick={handleExportFinancialsPDF} className="h-7 px-2.5 text-[11px] font-medium text-destructive hover:bg-destructive/5 rounded-md flex items-center gap-1 transition"><Printer size={13} /> <span className="hidden sm:inline">PDF</span></button>}
                   </div>
                 </div>
-                <div className="h-48 sm:h-80 w-full">
+                <div className="h-44 sm:h-72 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                      <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} interval={0} />
-                      <Tooltip cursor={{ fill: '#f0f9ff' }} contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
-                      <Bar dataKey="income" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={20} />
-                      <Bar dataKey="expense" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={20} />
+                    <BarChart data={chartData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} axisLine={false} tickLine={false} interval={0} />
+                      <Tooltip cursor={{ fill: 'hsl(var(--accent))' }} contentStyle={{ borderRadius: '8px', fontSize: '12px', border: '1px solid hsl(var(--border))', boxShadow: 'var(--fluent-shadow)' }} />
+                      <Bar dataKey="income" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={18} />
+                      <Bar dataKey="expense" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} barSize={18} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
-              <div className="bg-card p-4 sm:p-6 rounded-2xl shadow-sm border border-border flex flex-col gap-3 sm:gap-4">
-                <h3 className="font-bold text-foreground text-sm sm:text-base">إجراءات سريعة</h3>
-                <button onClick={() => setIsAIChatOpen(true)} className="w-full py-3 sm:py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm font-bold"><Sparkles size={18} className="text-yellow-300" /> المساعد الذكي</button>
-                <div className="flex-1 bg-gray-50 rounded-xl p-3 sm:p-4 border border-border overflow-hidden">
-                  <h4 className="font-bold text-foreground mb-2 sm:mb-3 text-xs sm:text-sm">آخر 5 دفعات</h4>
-                  <div className="space-y-2 sm:space-y-3">
-                    {recentTransactions.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">لا توجد دفعات بعد</p>}
+              <div className="fluent-card p-4 sm:p-5 flex flex-col gap-3">
+                <h3 className="font-semibold text-foreground text-sm">إجراءات سريعة</h3>
+                <button onClick={() => setIsAIChatOpen(true)} className="w-full py-2.5 sm:py-3 bg-primary text-primary-foreground rounded-lg flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold hover:bg-primary/90 transition shadow-sm">
+                  <Sparkles size={16} /> المساعد الذكي
+                </button>
+                <div className="flex-1 bg-secondary/50 rounded-lg p-3 border border-border overflow-hidden">
+                  <h4 className="font-semibold text-foreground mb-2 text-xs">آخر 5 دفعات</h4>
+                  <div className="space-y-2">
+                    {recentTransactions.length === 0 && <p className="text-[11px] text-muted-foreground text-center py-4">لا توجد دفعات بعد</p>}
                     {recentTransactions.map((tx, idx) => (
-                      <div key={idx} className="flex justify-between items-center border-b border-border pb-2 last:border-0 last:pb-0">
+                      <div key={idx} className="flex justify-between items-center border-b border-border/50 pb-1.5 last:border-0 last:pb-0">
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold ${tx.amount > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{tx.memberName.charAt(0)}</div>
-                          <p className="text-[11px] sm:text-xs font-bold text-foreground truncate">{tx.memberName}</p>
+                          <div className="w-6 h-6 shrink-0 rounded-md bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">{tx.memberName.charAt(0)}</div>
+                          <p className="text-[11px] font-medium text-foreground truncate">{tx.memberName}</p>
                         </div>
-                        <span className={`text-[11px] sm:text-xs font-bold shrink-0 ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'} dir-ltr`}>{tx.amount > 0 ? '+' : ''}{tx.amount}</span>
+                        <span className={`text-[11px] font-bold shrink-0 dir-ltr ${tx.amount > 0 ? 'text-[hsl(var(--success))]' : 'text-destructive'}`}>{tx.amount > 0 ? '+' : ''}{tx.amount}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 {canEdit ? (
                   <div className="flex gap-2">
-                    <button onClick={() => setIsWhatsAppModalOpen(true)} className="flex-1 py-2.5 sm:py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl border border-green-200 transition flex items-center justify-center gap-1 text-[10px] sm:text-xs font-bold">واتساب</button>
-                    <button onClick={() => setIsExpenseModalOpen(true)} className="flex-1 py-2.5 sm:py-3 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl border border-red-200 transition flex items-center justify-center gap-1 text-[10px] sm:text-xs font-bold"><Receipt size={14} /> مصروف</button>
+                    <button onClick={() => setIsWhatsAppModalOpen(true)} className="flex-1 h-9 bg-[hsl(var(--whatsapp))]/10 hover:bg-[hsl(var(--whatsapp))]/20 text-[hsl(var(--whatsapp-dark))] rounded-md border border-[hsl(var(--whatsapp))]/20 transition flex items-center justify-center gap-1 text-[11px] font-medium">واتساب</button>
+                    <button onClick={() => setIsExpenseModalOpen(true)} className="flex-1 h-9 bg-destructive/5 hover:bg-destructive/10 text-destructive rounded-md border border-destructive/20 transition flex items-center justify-center gap-1 text-[11px] font-medium"><Receipt size={13} /> مصروف</button>
                   </div>
-                ) : <div className="text-center text-[10px] text-muted-foreground py-2 bg-gray-50 rounded-lg border border-dashed"><Lock size={12} className="mx-auto mb-1 opacity-50" /> يجب تسجيل الدخول</div>}
+                ) : <div className="text-center text-[10px] text-muted-foreground py-3 bg-secondary rounded-md border border-dashed border-border"><Lock size={12} className="mx-auto mb-1 opacity-40" /> يجب تسجيل الدخول</div>}
               </div>
             </div>
           </div>
@@ -383,24 +383,24 @@ export default function SanduqApp() {
 
         {/* MEMBERS */}
         {activeTab === 'members' && (
-          <div className="space-y-4 sm:space-y-6 animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
-              <div className="lg:col-span-3 bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+          <div className="space-y-3 sm:space-y-4 animate-fluent-reveal">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="lg:col-span-3 fluent-card overflow-hidden">
                 {/* Header */}
-                <div className="p-4 sm:p-6 border-b border-border space-y-3">
+                <div className="p-4 sm:p-5 border-b border-border space-y-3">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-base sm:text-xl font-bold text-foreground">قائمة الأعضاء ({filteredMembers.length})</h2>
+                    <h2 className="text-sm sm:text-base font-semibold text-foreground">قائمة الأعضاء <span className="text-muted-foreground font-normal">({filteredMembers.length})</span></h2>
                     {canEdit && (
-                      <div className="flex gap-1.5 sm:gap-2">
-                        <button onClick={() => setIsRemindersModalOpen(true)} className="bg-orange-600 text-white p-2 sm:px-3 sm:py-2 rounded-lg hover:bg-orange-700 transition flex items-center gap-1 text-xs sm:text-sm font-medium"><Bell size={14} /><span className="hidden sm:inline"> تذكير</span></button>
-                        <button onClick={handleExportMembersPDF} className="bg-red-50 text-red-700 p-2 rounded-lg hover:bg-red-100 transition"><Printer size={16} /></button>
-                        <button onClick={handleExportMembers} className="bg-green-50 text-green-700 p-2 rounded-lg hover:bg-green-100 transition hidden sm:flex"><FileSpreadsheet size={16} /></button>
+                      <div className="flex gap-1">
+                        <button onClick={() => setIsRemindersModalOpen(true)} className="h-8 px-2.5 bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))] rounded-md hover:bg-[hsl(var(--warning))]/20 transition flex items-center gap-1 text-xs font-medium"><Bell size={13} /><span className="hidden sm:inline"> تذكير</span></button>
+                        <button onClick={handleExportMembersPDF} className="h-8 w-8 bg-destructive/5 text-destructive rounded-md hover:bg-destructive/10 transition flex items-center justify-center"><Printer size={14} /></button>
+                        <button onClick={handleExportMembers} className="h-8 w-8 bg-[hsl(var(--success))]/5 text-[hsl(var(--success))] rounded-md hover:bg-[hsl(var(--success))]/10 transition hidden sm:flex items-center justify-center"><FileSpreadsheet size={14} /></button>
                       </div>
                     )}
                   </div>
                   <div className="flex flex-col xs:flex-row gap-2">
-                    <div className="relative flex-1"><input type="text" placeholder="بحث بالاسم..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-4 pr-9 py-2 bg-gray-50 border border-border rounded-lg text-sm" /><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} /></div>
-                    <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="px-3 py-2 bg-gray-50 border border-border rounded-lg text-xs sm:text-sm min-w-0">
+                    <div className="relative flex-1"><input type="text" placeholder="بحث بالاسم..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full h-8 pl-3 pr-8 bg-secondary border border-border rounded-md text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" /><Search className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} /></div>
+                    <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="h-8 px-2.5 bg-secondary border border-border rounded-md text-xs min-w-0 focus:outline-none focus:ring-1 focus:ring-ring">
                       <option value="all">الجميع</option>
                       {Array.from(new Set(members.map(m => m.paidUntil))).sort().reverse().map((date: string) => <option key={date} value={date}>{formatDisplayDate(date)}</option>)}
                     </select>
@@ -410,17 +410,17 @@ export default function SanduqApp() {
                 {/* Desktop table */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-right">
-                    <thead className="bg-gray-50 text-muted-foreground text-sm font-semibold"><tr><th className="px-6 py-4">العضو</th><th className="px-6 py-4">مدفوع لغاية</th><th className="px-6 py-4">المجموع</th><th className="px-6 py-4">الحالة</th><th className="px-6 py-4 text-center">الإجراء</th></tr></thead>
+                    <thead className="bg-secondary/50 text-muted-foreground text-xs font-medium"><tr><th className="px-5 py-3">العضو</th><th className="px-5 py-3">مدفوع لغاية</th><th className="px-5 py-3">المجموع</th><th className="px-5 py-3">الحالة</th><th className="px-5 py-3 text-center">الإجراء</th></tr></thead>
                     <tbody className="divide-y divide-border">
                       {filteredMembers.map(member => {
                         const statusInfo = getMemberStatus(member.paidUntil);
                         return (
-                          <tr key={member.id} onClick={() => setViewMemberHistory(member)} className="hover:bg-blue-50/50 transition cursor-pointer group">
-                            <td className="px-6 py-4"><div className="font-bold text-foreground flex items-center gap-3">{member.profileImage ? <img src={member.profileImage} className="w-10 h-10 rounded-full object-cover shrink-0" /> : <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">{member.name.charAt(0)}</div>}<div className="min-w-0"><div className="truncate">{member.name}</div><div className="text-[10px] text-muted-foreground font-normal">{member.phone}</div></div>{canEdit && <button onClick={(e) => { e.stopPropagation(); setEditingMember(member); setIsEditMemberModalOpen(true); }} className="text-gray-300 hover:text-blue-500 p-1 mr-2 shrink-0"><Edit size={14} /></button>}</div></td>
-                            <td className="px-6 py-4"><span className="font-mono font-medium text-foreground bg-gray-100 px-2 py-1 rounded text-sm">{formatDisplayDate(String(member.paidUntil))}</span></td>
-                            <td className="px-6 py-4"><span className="font-bold text-foreground">{formatCurrency(member.totalPaid)}</span></td>
-                            <td className="px-6 py-4"><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>{statusInfo.text}</span></td>
-                            <td className="px-6 py-4 flex justify-center">{canEdit && <button onClick={(e) => { e.stopPropagation(); setSelectedMember(member); setIsPaymentModalOpen(true); }} className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground p-2 rounded-lg transition"><DollarSign size={18} /></button>}</td>
+                          <tr key={member.id} onClick={() => setViewMemberHistory(member)} className="hover:bg-accent/50 transition cursor-pointer group">
+                            <td className="px-5 py-3"><div className="font-medium text-foreground flex items-center gap-3 text-sm">{member.profileImage ? <img src={member.profileImage} className="w-8 h-8 rounded-md object-cover shrink-0" /> : <div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">{member.name.charAt(0)}</div>}<div className="min-w-0"><div className="truncate">{member.name}</div><div className="text-[10px] text-muted-foreground font-normal">{member.phone}</div></div>{canEdit && <button onClick={(e) => { e.stopPropagation(); setEditingMember(member); setIsEditMemberModalOpen(true); }} className="text-muted-foreground/30 hover:text-primary p-1 mr-1 shrink-0 opacity-0 group-hover:opacity-100 transition"><Edit size={13} /></button>}</div></td>
+                            <td className="px-5 py-3"><span className="font-mono text-xs text-foreground bg-secondary px-2 py-0.5 rounded">{formatDisplayDate(String(member.paidUntil))}</span></td>
+                            <td className="px-5 py-3"><span className="font-semibold text-foreground text-sm">{formatCurrency(member.totalPaid)}</span></td>
+                            <td className="px-5 py-3"><span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${statusInfo.color}`}>{statusInfo.text}</span></td>
+                            <td className="px-5 py-3 flex justify-center">{canEdit && <button onClick={(e) => { e.stopPropagation(); setSelectedMember(member); setIsPaymentModalOpen(true); }} className="h-8 w-8 bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground rounded-md transition flex items-center justify-center"><DollarSign size={15} /></button>}</td>
                           </tr>
                         );
                       })}
@@ -430,31 +430,31 @@ export default function SanduqApp() {
 
                 {/* Mobile card list */}
                 <div className="md:hidden divide-y divide-border">
-                  {filteredMembers.length === 0 && <div className="text-center py-10 text-muted-foreground text-sm">لا يوجد أعضاء</div>}
+                  {filteredMembers.length === 0 && <div className="text-center py-10 text-muted-foreground text-xs">لا يوجد أعضاء</div>}
                   {filteredMembers.map(member => {
                     const statusInfo = getMemberStatus(member.paidUntil);
                     return (
-                      <div key={member.id} onClick={() => setViewMemberHistory(member)} className="p-4 hover:bg-blue-50/30 transition cursor-pointer active:bg-blue-50/60">
+                      <div key={member.id} onClick={() => setViewMemberHistory(member)} className="p-3.5 hover:bg-accent/30 transition cursor-pointer active:bg-accent/50">
                         <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            {member.profileImage ? <img src={member.profileImage} className="w-10 h-10 rounded-full object-cover shrink-0" /> : <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">{member.name.charAt(0)}</div>}
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            {member.profileImage ? <img src={member.profileImage} className="w-9 h-9 rounded-md object-cover shrink-0" /> : <div className="w-9 h-9 rounded-md bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs shrink-0">{member.name.charAt(0)}</div>}
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-foreground text-sm truncate">{member.name}</span>
-                                <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${statusInfo.color}`}>{statusInfo.text}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-medium text-foreground text-sm truncate">{member.name}</span>
+                                <span className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${statusInfo.color}`}>{statusInfo.text}</span>
                               </div>
-                              <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
-                                <span>لغاية: {formatDisplayDate(member.paidUntil)}</span>
-                                <span>•</span>
-                                <span className="font-bold text-foreground">{formatCurrency(member.totalPaid)}</span>
+                              <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
+                                <span>{formatDisplayDate(member.paidUntil)}</span>
+                                <span className="opacity-30">|</span>
+                                <span className="font-semibold text-foreground">{formatCurrency(member.totalPaid)}</span>
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-0.5 shrink-0">
                             {canEdit && (
                               <>
-                                <button onClick={(e) => { e.stopPropagation(); setEditingMember(member); setIsEditMemberModalOpen(true); }} className="text-gray-300 hover:text-blue-500 p-1.5"><Edit size={14} /></button>
-                                <button onClick={(e) => { e.stopPropagation(); setSelectedMember(member); setIsPaymentModalOpen(true); }} className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground p-1.5 rounded-lg transition"><DollarSign size={16} /></button>
+                                <button onClick={(e) => { e.stopPropagation(); setEditingMember(member); setIsEditMemberModalOpen(true); }} className="h-7 w-7 text-muted-foreground/40 hover:text-primary rounded-md flex items-center justify-center transition"><Edit size={13} /></button>
+                                <button onClick={(e) => { e.stopPropagation(); setSelectedMember(member); setIsPaymentModalOpen(true); }} className="h-7 w-7 bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground rounded-md transition flex items-center justify-center"><DollarSign size={14} /></button>
                               </>
                             )}
                           </div>
@@ -466,16 +466,16 @@ export default function SanduqApp() {
               </div>
 
               {/* Add member sidebar */}
-              <div className="bg-card p-4 sm:p-6 rounded-2xl shadow-sm border border-border h-fit">
-                <div className="text-center mb-3 sm:mb-4"><div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3"><Users size={20} /></div><h3 className="font-bold text-foreground text-sm sm:text-base">إضافة عضو</h3></div>
-                {canEdit ? (!isAddMemberMode ? <button onClick={() => setIsAddMemberMode(true)} className="w-full py-2 bg-primary text-primary-foreground rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm hover:opacity-90"><Plus size={18} /> عضو جديد</button> : (
-                  <form onSubmit={handleAddMember} className="space-y-3 animate-fade-in">
-                    <div className="flex justify-center mb-2"><div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gray-50 border border-border flex items-center justify-center cursor-pointer hover:bg-gray-100 transition overflow-hidden" onClick={() => fileInputRef.current?.click()}>{newMemberImage ? <img src={newMemberImage} className="w-full h-full object-cover" /> : <Camera size={18} className="text-muted-foreground" />}</div><input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setNewMemberImage(await compressImage(f)); }} /></div>
-                    <input type="text" placeholder="الاسم" value={newMemberName} onChange={e => setNewMemberName(e.target.value)} className="w-full p-2.5 text-sm border border-border rounded-lg" autoFocus />
-                    <input type="date" value={newMemberJoinDate} onChange={e => setNewMemberJoinDate(e.target.value)} className="w-full p-2.5 text-sm border border-border rounded-lg text-right" />
-                    <div className="flex gap-2"><button type="submit" className="flex-1 py-2 bg-green-600 text-white rounded-lg text-sm font-medium">حفظ</button><button type="button" onClick={() => setIsAddMemberMode(false)} className="flex-1 py-2 bg-gray-100 text-muted-foreground rounded-lg text-sm">إلغاء</button></div>
+              <div className="fluent-card p-4 sm:p-5 h-fit">
+                <div className="text-center mb-3"><div className="w-10 h-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center mx-auto mb-2"><Users size={18} /></div><h3 className="font-semibold text-foreground text-sm">إضافة عضو</h3></div>
+                {canEdit ? (!isAddMemberMode ? <button onClick={() => setIsAddMemberMode(true)} className="w-full h-9 bg-primary text-primary-foreground rounded-lg font-medium transition flex items-center justify-center gap-2 text-xs hover:bg-primary/90"><Plus size={15} /> عضو جديد</button> : (
+                  <form onSubmit={handleAddMember} className="space-y-2.5 animate-fade-in">
+                    <div className="flex justify-center mb-2"><div className="w-14 h-14 rounded-lg bg-secondary border border-border flex items-center justify-center cursor-pointer hover:bg-accent transition overflow-hidden" onClick={() => fileInputRef.current?.click()}>{newMemberImage ? <img src={newMemberImage} className="w-full h-full object-cover" /> : <Camera size={16} className="text-muted-foreground" />}</div><input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setNewMemberImage(await compressImage(f)); }} /></div>
+                    <input type="text" placeholder="الاسم" value={newMemberName} onChange={e => setNewMemberName(e.target.value)} className="w-full h-8 px-3 text-xs border border-border rounded-md bg-secondary focus:outline-none focus:ring-1 focus:ring-ring" autoFocus />
+                    <input type="date" value={newMemberJoinDate} onChange={e => setNewMemberJoinDate(e.target.value)} className="w-full h-8 px-3 text-xs border border-border rounded-md bg-secondary text-right focus:outline-none focus:ring-1 focus:ring-ring" />
+                    <div className="flex gap-1.5"><button type="submit" className="flex-1 h-8 bg-[hsl(var(--success))] text-white rounded-md text-xs font-medium hover:opacity-90 transition">حفظ</button><button type="button" onClick={() => setIsAddMemberMode(false)} className="flex-1 h-8 bg-secondary text-muted-foreground rounded-md text-xs hover:bg-accent transition">إلغاء</button></div>
                   </form>
-                )) : <div className="text-center text-xs text-muted-foreground bg-gray-50 p-3 rounded-lg">يجب تسجيل الدخول لإضافة أعضاء</div>}
+                )) : <div className="text-center text-[11px] text-muted-foreground bg-secondary p-3 rounded-md">يجب تسجيل الدخول لإضافة أعضاء</div>}
               </div>
             </div>
           </div>
@@ -483,42 +483,42 @@ export default function SanduqApp() {
 
         {/* EXPENSES */}
         {activeTab === 'expenses' && (
-          <div className="space-y-4 sm:space-y-6 animate-fade-in">
-            <div className="bg-card rounded-2xl shadow-sm border border-border">
-              <div className="p-4 sm:p-6 border-b border-border flex items-center justify-between gap-2">
-                <h2 className="text-base sm:text-xl font-bold text-foreground">سجل المصروفات</h2>
-                {canEdit && <button onClick={() => setIsExpenseModalOpen(true)} className="bg-destructive text-destructive-foreground px-3 py-2 rounded-xl font-medium hover:opacity-90 transition flex items-center gap-1.5 text-xs sm:text-sm"><Plus size={16} /> <span className="hidden xs:inline">إضافة</span> مصروف</button>}
+          <div className="space-y-3 sm:space-y-4 animate-fluent-reveal">
+            <div className="fluent-card overflow-hidden">
+              <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between gap-2">
+                <h2 className="text-sm sm:text-base font-semibold text-foreground">سجل المصروفات</h2>
+                {canEdit && <button onClick={() => setIsExpenseModalOpen(true)} className="h-8 px-3 bg-destructive text-destructive-foreground rounded-md font-medium hover:bg-destructive/90 transition flex items-center gap-1.5 text-xs"><Plus size={14} /> مصروف</button>}
               </div>
 
               {/* Desktop table */}
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-right">
-                  <thead className="bg-gray-50 text-muted-foreground text-sm font-semibold"><tr><th className="px-6 py-4">البند</th><th className="px-6 py-4">التصنيف</th><th className="px-6 py-4">التاريخ</th><th className="px-6 py-4">القيمة</th><th className="px-6 py-4">ملاحظات</th>{isAdmin && <th className="px-6 py-4"></th>}</tr></thead>
+                  <thead className="bg-secondary/50 text-muted-foreground text-xs font-medium"><tr><th className="px-5 py-3">البند</th><th className="px-5 py-3">التصنيف</th><th className="px-5 py-3">التاريخ</th><th className="px-5 py-3">القيمة</th><th className="px-5 py-3">ملاحظات</th>{isAdmin && <th className="px-5 py-3"></th>}</tr></thead>
                   <tbody className="divide-y divide-border">
                     {expenses.length > 0 ? expenses.map(expense => (
-                      <tr key={expense.id} className="hover:bg-red-50/30 transition"><td className="px-6 py-4 font-bold text-foreground">{expense.title}</td><td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getCategoryStyle(expense.category)}`}>{expense.category}</span></td><td className="px-6 py-4 text-sm text-muted-foreground">{format(new Date(expense.date), 'dd/MM/yyyy')}</td><td className="px-6 py-4 text-red-600 font-bold">{formatCurrency(expense.amount)}</td><td className="px-6 py-4 text-sm text-muted-foreground truncate max-w-xs">{expense.notes || '-'}</td>{isAdmin && <td className="px-6 py-4"><button onClick={() => handleDeleteExpense(expense.id)} className="text-red-400 hover:text-red-600"><XIcon size={16} /></button></td>}</tr>
-                    )) : <tr><td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">لا توجد مصروفات مسجلة</td></tr>}
+                      <tr key={expense.id} className="hover:bg-accent/30 transition"><td className="px-5 py-3 font-medium text-foreground text-sm">{expense.title}</td><td className="px-5 py-3"><span className={`px-2 py-0.5 rounded text-[11px] font-medium ${getCategoryStyle(expense.category)}`}>{expense.category}</span></td><td className="px-5 py-3 text-xs text-muted-foreground">{format(new Date(expense.date), 'dd/MM/yyyy')}</td><td className="px-5 py-3 text-destructive font-semibold text-sm">{formatCurrency(expense.amount)}</td><td className="px-5 py-3 text-xs text-muted-foreground truncate max-w-[200px]">{expense.notes || '-'}</td>{isAdmin && <td className="px-5 py-3"><button onClick={() => handleDeleteExpense(expense.id)} className="text-muted-foreground/40 hover:text-destructive transition"><XIcon size={14} /></button></td>}</tr>
+                    )) : <tr><td colSpan={6} className="px-5 py-12 text-center text-muted-foreground text-xs">لا توجد مصروفات مسجلة</td></tr>}
                   </tbody>
                 </table>
               </div>
 
               {/* Mobile card list */}
               <div className="sm:hidden divide-y divide-border">
-                {expenses.length === 0 && <div className="text-center py-10 text-muted-foreground text-sm">لا توجد مصروفات</div>}
+                {expenses.length === 0 && <div className="text-center py-10 text-muted-foreground text-xs">لا توجد مصروفات</div>}
                 {expenses.map(expense => (
-                  <div key={expense.id} className="p-4 space-y-2">
+                  <div key={expense.id} className="p-3.5 space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h3 className="font-bold text-foreground text-sm truncate">{expense.title}</h3>
-                        <span className={`inline-flex mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${getCategoryStyle(expense.category)}`}>{expense.category}</span>
+                        <h3 className="font-medium text-foreground text-sm truncate">{expense.title}</h3>
+                        <span className={`inline-flex mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${getCategoryStyle(expense.category)}`}>{expense.category}</span>
                       </div>
                       <div className="text-left shrink-0">
-                        <p className="text-red-600 font-bold text-sm">{formatCurrency(expense.amount)}</p>
+                        <p className="text-destructive font-semibold text-sm">{formatCurrency(expense.amount)}</p>
                         <p className="text-[10px] text-muted-foreground">{format(new Date(expense.date), 'dd/MM/yyyy')}</p>
                       </div>
                     </div>
-                    {expense.notes && <p className="text-xs text-muted-foreground bg-gray-50 p-2 rounded-lg">{expense.notes}</p>}
-                    {isAdmin && <button onClick={() => handleDeleteExpense(expense.id)} className="text-[10px] text-red-400 hover:text-red-600 font-medium">حذف</button>}
+                    {expense.notes && <p className="text-[11px] text-muted-foreground bg-secondary p-2 rounded">{expense.notes}</p>}
+                    {isAdmin && <button onClick={() => handleDeleteExpense(expense.id)} className="text-[10px] text-muted-foreground/50 hover:text-destructive font-medium transition">حذف</button>}
                   </div>
                 ))}
               </div>
@@ -527,10 +527,12 @@ export default function SanduqApp() {
         )}
       </main>
 
-      <footer className="max-w-7xl mx-auto px-4 py-4 sm:py-6 text-center"><p className="text-[10px] sm:text-xs text-muted-foreground font-medium">تم إنشاء هذا البرنامج بواسطة مالك إدريس</p></footer>
+      <footer className="max-w-7xl mx-auto px-4 py-4 text-center"><p className="text-[10px] text-muted-foreground/60">تم إنشاء هذا البرنامج بواسطة مالك إدريس</p></footer>
 
-      {/* FAB */}
-      <button onClick={() => setIsAIChatOpen(true)} className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 bg-purple-600 hover:bg-purple-700 text-white p-3 sm:p-4 rounded-full shadow-2xl transition hover:scale-110"><Sparkles size={20} className="text-yellow-300" /></button>
+      {/* FAB - Fluent style */}
+      <button onClick={() => setIsAIChatOpen(true)} className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 bg-primary hover:bg-primary/90 text-primary-foreground p-3 rounded-xl shadow-lg transition hover:shadow-xl hover:scale-105 active:scale-95">
+        <Sparkles size={18} />
+      </button>
 
       {/* MODALS */}
       <PublicInquiryModal isOpen={isPublicInquiryOpen} onClose={() => setIsPublicInquiryOpen(false)} members={members} onCheck={handlePublicCheck} />
