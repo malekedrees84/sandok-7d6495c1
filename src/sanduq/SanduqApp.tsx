@@ -18,6 +18,7 @@ import { AuditLogsModal } from './components/AuditLogsModal';
 import { NewsTicker } from './components/NewsTicker';
 import { ManageNewsModal } from './components/ManageNewsModal';
 import { TreasuryModal } from './components/TreasuryModal';
+import { FamilyAssignmentModal } from './components/FamilyAssignmentModal';
 import { formatCurrency, formatDisplayDate, getMemberStatus, parseMonthStr, formatMonthStr, downloadCSV, compressImage, generatePDF } from './utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, addMonths } from 'date-fns';
