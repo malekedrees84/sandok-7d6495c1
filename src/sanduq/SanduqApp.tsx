@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Users, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown } from 'lucide-react';
-import { Member, PaymentTransaction, Expense, MONTHLY_FEE, START_DATE, AuditLog, VisitorLog, Announcement } from './types';
+import { Users, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown, Vault } from 'lucide-react';
+import { Member, PaymentTransaction, Expense, MONTHLY_FEE, START_DATE, AuditLog, VisitorLog, Announcement, TreasuryTransaction } from './types';
 import { StatCard } from './components/StatCard';
 import { PaymentModal } from './components/PaymentModal';
 import { MemberHistoryModal } from './components/MemberHistoryModal';
@@ -17,6 +17,7 @@ import { PublicInquiryModal } from './components/PublicInquiryModal';
 import { AuditLogsModal } from './components/AuditLogsModal';
 import { NewsTicker } from './components/NewsTicker';
 import { ManageNewsModal } from './components/ManageNewsModal';
+import { TreasuryModal } from './components/TreasuryModal';
 import { formatCurrency, formatDisplayDate, getMemberStatus, parseMonthStr, formatMonthStr, downloadCSV, compressImage, generatePDF } from './utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, addMonths } from 'date-fns';
@@ -35,6 +36,7 @@ export default function SanduqApp() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [visitorLogs, setVisitorLogs] = useState<VisitorLog[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [treasuryTx, setTreasuryTx] = useState<TreasuryTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -67,6 +69,7 @@ export default function SanduqApp() {
   const [isPublicInquiryOpen, setIsPublicInquiryOpen] = useState(false);
   const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
+  const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
   const [isAddMemberMode, setIsAddMemberMode] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberJoinDate, setNewMemberJoinDate] = useState(new Date().toISOString().slice(0, 10));
@@ -101,12 +104,12 @@ export default function SanduqApp() {
   const loadAllData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [m, p, e, al, vl, an] = await Promise.all([
+      const [m, p, e, al, vl, an, tt] = await Promise.all([
         db.getMembers(), db.getPayments(), db.getExpenses(),
-        db.getAuditLogs(), db.getVisitorLogs(), db.getAnnouncements(),
+        db.getAuditLogs(), db.getVisitorLogs(), db.getAnnouncements(), db.getTreasuryTransactions(),
       ]);
       setMembers(m); setPayments(p); setExpenses(e);
-      setAuditLogs(al); setVisitorLogs(vl); setAnnouncements(an);
+      setAuditLogs(al); setVisitorLogs(vl); setAnnouncements(an); setTreasuryTx(tt);
     } catch (err) { console.error('Load error:', err); }
     setIsLoading(false);
   }, []);
