@@ -400,10 +400,10 @@ export default function SanduqApp() {
           <div className="space-y-3 sm:space-y-5 animate-fluent-reveal">
             <NewsTicker announcements={announcements} canEdit={canEdit} onEdit={() => setIsNewsModalOpen(true)} direction={tickerDirection} duration={tickerDuration} />
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-              <StatCard title="الرصيد" value={formatCurrency(netBalance)} icon={<span className="text-lg sm:text-xl font-bold">₪</span>} trend="متوفر" />
-              <StatCard title="التحصيلات" value={formatCurrency(totalIncome)} icon={<TrendingUp size={18} />} />
-              <StatCard title="المصروفات" value={formatCurrency(totalExpenses_val)} icon={<TrendingDown size={18} />} />
-              <StatCard title="الزوار" value={visitorLogs.length.toString()} icon={<Eye size={18} />} />
+              <StatCard title="الرصيد" value={formatCurrency(netBalance)} icon={<span className="text-lg sm:text-xl font-black">₪</span>} trend="متوفر" gradient="linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 68%))" />
+              <StatCard title="التحصيلات" value={formatCurrency(totalIncome)} icon={<TrendingUp size={18} />} gradient="linear-gradient(135deg, hsl(175 70% 41%), hsl(175 70% 51%))" />
+              <StatCard title="المصروفات" value={formatCurrency(totalExpenses_val)} icon={<TrendingDown size={18} />} gradient="linear-gradient(135deg, hsl(330 85% 55%), hsl(330 85% 65%))" />
+              <StatCard title="الزوار" value={visitorLogs.length.toString()} icon={<Eye size={18} />} gradient="linear-gradient(135deg, hsl(38 92% 50%), hsl(45 100% 60%))" />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
               <div className="lg:col-span-2 fluent-card p-4 sm:p-5">
@@ -428,7 +428,7 @@ export default function SanduqApp() {
               </div>
               <div className="fluent-card p-4 sm:p-5 flex flex-col gap-3">
                 <h3 className="font-semibold text-foreground text-sm">إجراءات سريعة</h3>
-                <button onClick={() => setIsAIChatOpen(true)} className="w-full py-2.5 sm:py-3 bg-primary text-primary-foreground rounded-lg flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold hover:bg-primary/90 transition shadow-sm">
+                <button onClick={() => setIsAIChatOpen(true)} className="w-full py-3 sm:py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold hover:opacity-90 transition shadow-md text-white" style={{ background: 'var(--gradient-primary)' }}>
                   <Sparkles size={16} /> المساعد الذكي
                 </button>
                 <div className="flex-1 bg-secondary/50 rounded-lg p-3 border border-border overflow-hidden">
@@ -603,8 +603,8 @@ export default function SanduqApp() {
       <footer className="max-w-7xl mx-auto px-4 py-4 text-center"><p className="text-[10px] text-muted-foreground/60">تم إنشاء هذا البرنامج بواسطة مالك إدريس</p></footer>
 
       {/* FAB */}
-      <button onClick={() => setIsAIChatOpen(true)} className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 bg-primary hover:bg-primary/90 text-primary-foreground p-3 rounded-xl shadow-lg transition hover:shadow-xl hover:scale-105 active:scale-95">
-        <Sparkles size={18} />
+      <button onClick={() => setIsAIChatOpen(true)} className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 text-white p-3.5 rounded-2xl shadow-lg transition hover:shadow-xl hover:scale-105 active:scale-95" style={{ background: 'var(--gradient-primary)' }}>
+        <Sparkles size={20} />
       </button>
 
       {/* MODALS */}
