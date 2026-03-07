@@ -1,42 +1,51 @@
-// localStorage-only API service (no external backend)
-const SCRIPT_URL_KEY = 'sanduq_script_url';
+// Default fallback URL
+const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwt7MgpobhUnB4zCtG_f-WqWpdWdpMzm2xb72LloXJcRVqZnQr8-vLmlbiJPumu4P7q/exec";
+const STORAGE_KEY_URL = "sanduq_api_url";
 
-export const getScriptUrl = (): string => {
-  return localStorage.getItem(SCRIPT_URL_KEY) || '';
+// Helper to get the current URL
+export const getScriptUrl = () => {
+  return localStorage.getItem(STORAGE_KEY_URL) || DEFAULT_SCRIPT_URL;
 };
 
+// Helper to set a new URL
 export const setScriptUrl = (url: string) => {
-  localStorage.setItem(SCRIPT_URL_KEY, url);
+  if (!url) {
+    localStorage.removeItem(STORAGE_KEY_URL);
+  } else {
+    localStorage.setItem(STORAGE_KEY_URL, url.trim());
+  }
 };
 
 export const api = {
-  fetchData: async (): Promise<any> => {
+  // Fetch all data from the sheet
+  fetchData: async () => {
     const url = getScriptUrl();
-    if (!url) return null;
-    
     try {
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Network error');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       return await response.json();
     } catch (error) {
-      console.warn('Cloud fetch failed, using local data', error);
-      return null;
+      console.error("Error fetching data from Google Sheet:", error);
+      throw error;
     }
   },
 
-  saveData: async (data: any): Promise<void> => {
+  // Save specific data to the sheet (POST)
+  saveData: async (data: { key: string; value: string } | { key: string; value: string }[]) => {
     const url = getScriptUrl();
-    if (!url) return;
-    
     try {
-      await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
         body: JSON.stringify(data),
-        mode: 'no-cors'
       });
+      return await response.json();
     } catch (error) {
-      console.warn('Cloud save failed', error);
+      console.error("Error saving data to Google Sheet:", error);
     }
-  }
+  },
 };
