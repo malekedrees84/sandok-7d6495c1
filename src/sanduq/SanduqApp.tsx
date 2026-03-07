@@ -736,6 +736,7 @@ export default function SanduqApp() {
       <EditMemberModal isOpen={isEditMemberModalOpen} onClose={() => setIsEditMemberModalOpen(false)} member={editingMember} onUpdate={handleUpdateMember} allMembers={members} />
       <RemindersModal isOpen={isRemindersModalOpen} onClose={() => setIsRemindersModalOpen(false)} members={members} onMarkAsSent={handleMarkReminderSent} />
       <TreasuryModal isOpen={isTreasuryOpen} onClose={() => setIsTreasuryOpen(false)} transactions={treasuryTx} onAddTransaction={handleAddTreasuryTx} onDeleteTransaction={handleDeleteTreasuryTx} canEdit={canEdit} />
+      <FamilyAssignmentModal isOpen={isFamilyAssignOpen} onClose={() => setIsFamilyAssignOpen(false)} members={members} onAssign={handleFamilyAssign} />
 
       <footer className="text-center py-4 text-[11px] text-muted-foreground border-t border-border mt-6">
         جميع الحقوق محفوظة لدى المبرمج مالك ادريس
