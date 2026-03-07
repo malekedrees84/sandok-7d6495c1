@@ -178,6 +178,36 @@ export type Database = {
           },
         ]
       }
+      treasury_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string
+          description: string | null
+          holder: string
+          id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date: string
+          description?: string | null
+          holder: string
+          id: string
+          type?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string
+          description?: string | null
+          holder?: string
+          id?: string
+          type?: string
+        }
+        Relationships: []
+      }
       visitor_logs: {
         Row: {
           created_at: string | null

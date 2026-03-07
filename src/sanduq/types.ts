@@ -42,6 +42,17 @@ export interface VisitorLog {
   timestamp: string;
 }
 
+export interface TreasuryTransaction {
+  id: string;
+  holder: string;
+  type: 'deposit' | 'withdraw' | 'transfer';
+  amount: number;
+  description: string;
+  date: string;
+}
+
+export const TREASURY_HOLDERS = ['مالك', 'معين', 'مؤيد'] as const;
+
 export interface Announcement {
   id: string;
   text: string;

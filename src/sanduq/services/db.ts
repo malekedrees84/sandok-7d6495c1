@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Member, PaymentTransaction, Expense, AuditLog, VisitorLog, Announcement } from '../types';
+import { Member, PaymentTransaction, Expense, AuditLog, VisitorLog, Announcement, TreasuryTransaction } from '../types';
 
 // Helper to convert DB row to Member
 const toMember = (row: any): Member => ({
@@ -184,5 +184,29 @@ export const db = {
   async deleteAllAnnouncements() {
     const { error } = await supabase.from('announcements').delete().neq('id', '');
     if (error) console.error('deleteAllAnnouncements error:', error);
+  },
+
+  // TREASURY
+  async getTreasuryTransactions(): Promise<TreasuryTransaction[]> {
+    const { data, error } = await supabase.from('treasury_transactions').select('*').order('created_at', { ascending: false });
+    if (error) { console.error('getTreasuryTransactions error:', error); return []; }
+    return (data || []).map((row: any) => ({
+      id: row.id, holder: row.holder, type: row.type as 'deposit' | 'withdraw' | 'transfer',
+      amount: Number(row.amount), description: row.description || '', date: row.date,
+    }));
+  },
+  async insertTreasuryTransaction(t: TreasuryTransaction) {
+    const { error } = await supabase.from('treasury_transactions').insert({
+      id: t.id, holder: t.holder, type: t.type, amount: t.amount, description: t.description, date: t.date,
+    });
+    if (error) console.error('insertTreasuryTransaction error:', error);
+  },
+  async deleteTreasuryTransaction(id: string) {
+    const { error } = await supabase.from('treasury_transactions').delete().eq('id', id);
+    if (error) console.error('deleteTreasuryTransaction error:', error);
+  },
+  async deleteAllTreasuryTransactions() {
+    const { error } = await supabase.from('treasury_transactions').delete().neq('id', '');
+    if (error) console.error('deleteAllTreasuryTransactions error:', error);
   },
 };

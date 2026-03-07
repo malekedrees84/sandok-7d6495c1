@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Users, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown } from 'lucide-react';
-import { Member, PaymentTransaction, Expense, MONTHLY_FEE, START_DATE, AuditLog, VisitorLog, Announcement } from './types';
+import { Users, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown, Vault } from 'lucide-react';
+import { Member, PaymentTransaction, Expense, MONTHLY_FEE, START_DATE, AuditLog, VisitorLog, Announcement, TreasuryTransaction } from './types';
 import { StatCard } from './components/StatCard';
 import { PaymentModal } from './components/PaymentModal';
 import { MemberHistoryModal } from './components/MemberHistoryModal';
@@ -17,6 +17,7 @@ import { PublicInquiryModal } from './components/PublicInquiryModal';
 import { AuditLogsModal } from './components/AuditLogsModal';
 import { NewsTicker } from './components/NewsTicker';
 import { ManageNewsModal } from './components/ManageNewsModal';
+import { TreasuryModal } from './components/TreasuryModal';
 import { formatCurrency, formatDisplayDate, getMemberStatus, parseMonthStr, formatMonthStr, downloadCSV, compressImage, generatePDF } from './utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, addMonths } from 'date-fns';
@@ -35,6 +36,7 @@ export default function SanduqApp() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [visitorLogs, setVisitorLogs] = useState<VisitorLog[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [treasuryTx, setTreasuryTx] = useState<TreasuryTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -67,6 +69,7 @@ export default function SanduqApp() {
   const [isPublicInquiryOpen, setIsPublicInquiryOpen] = useState(false);
   const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
+  const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
   const [isAddMemberMode, setIsAddMemberMode] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberJoinDate, setNewMemberJoinDate] = useState(new Date().toISOString().slice(0, 10));
@@ -101,12 +104,12 @@ export default function SanduqApp() {
   const loadAllData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [m, p, e, al, vl, an] = await Promise.all([
+      const [m, p, e, al, vl, an, tt] = await Promise.all([
         db.getMembers(), db.getPayments(), db.getExpenses(),
-        db.getAuditLogs(), db.getVisitorLogs(), db.getAnnouncements(),
+        db.getAuditLogs(), db.getVisitorLogs(), db.getAnnouncements(), db.getTreasuryTransactions(),
       ]);
       setMembers(m); setPayments(p); setExpenses(e);
-      setAuditLogs(al); setVisitorLogs(vl); setAnnouncements(an);
+      setAuditLogs(al); setVisitorLogs(vl); setAnnouncements(an); setTreasuryTx(tt);
     } catch (err) { console.error('Load error:', err); }
     setIsLoading(false);
   }, []);
@@ -290,6 +293,22 @@ export default function SanduqApp() {
     });
   };
 
+  const handleAddTreasuryTx = async (tx: Omit<TreasuryTransaction, 'id'>) => {
+    const newTx: TreasuryTransaction = { ...tx, id: crypto.randomUUID() };
+    await withSaving(async () => {
+      await db.insertTreasuryTransaction(newTx);
+      setTreasuryTx(prev => [newTx, ...prev]);
+      await logAction('حركة خزينة', `${tx.type === 'deposit' ? 'إيداع' : 'سحب'} ${tx.amount} - ${tx.holder}`);
+    });
+  };
+
+  const handleDeleteTreasuryTx = async (id: string) => {
+    await withSaving(async () => {
+      await db.deleteTreasuryTransaction(id);
+      setTreasuryTx(prev => prev.filter(t => t.id !== id));
+    });
+  };
+
   const handleExportMembersPDF = () => {
     const headers = ["الاسم", "تاريخ الانضمام", "مدفوع لغاية", "المجموع", "الحالة"];
     const rows = members.map(m => { const s = getMemberStatus(m.paidUntil); return [m.name, m.joinDate || '-', formatDisplayDate(m.paidUntil), formatCurrency(m.totalPaid), s.text]; });
@@ -431,6 +450,11 @@ export default function SanduqApp() {
                 <button onClick={() => setIsAIChatOpen(true)} className="w-full py-3 sm:py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold hover:opacity-90 transition shadow-md text-white" style={{ background: 'var(--gradient-primary)' }}>
                   <Sparkles size={16} /> المساعد الذكي
                 </button>
+                {canEdit && (
+                  <button onClick={() => setIsTreasuryOpen(true)} className="w-full py-3 sm:py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold border-2 border-primary text-primary hover:bg-primary/5 transition">
+                    <Vault size={16} /> الخزينة
+                  </button>
+                )}
                 <div className="flex-1 bg-secondary/50 rounded-lg p-3 border border-border overflow-hidden">
                   <h4 className="font-semibold text-foreground mb-2 text-xs">آخر 20 دفعة</h4>
                   <div className="max-h-60 overflow-y-auto space-y-2 scrollbar-thin">
@@ -631,6 +655,7 @@ export default function SanduqApp() {
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} onLogin={handleUserLogin} />
       <EditMemberModal isOpen={isEditMemberModalOpen} onClose={() => setIsEditMemberModalOpen(false)} member={editingMember} onUpdate={handleUpdateMember} />
       <RemindersModal isOpen={isRemindersModalOpen} onClose={() => setIsRemindersModalOpen(false)} members={members} onMarkAsSent={handleMarkReminderSent} />
+      <TreasuryModal isOpen={isTreasuryOpen} onClose={() => setIsTreasuryOpen(false)} transactions={treasuryTx} onAddTransaction={handleAddTreasuryTx} onDeleteTransaction={handleDeleteTreasuryTx} canEdit={canEdit} />
 
       <footer className="text-center py-4 text-[11px] text-muted-foreground border-t border-border mt-6">
         جميع الحقوق محفوظة لدى المبرمج مالك ادريس
