@@ -452,7 +452,7 @@ export default function SanduqApp() {
     
     // Add ungrouped members as a single group at the bottom
     if (ungrouped.length > 0) {
-      familyGroups.push({ head: null, members: ungrouped, color: { bg: 'transparent', text: 'hsl(var(--muted-foreground))' } });
+      familyGroups.push({ head: null, members: ungrouped, color: { bg: 'transparent', border: 'transparent', text: 'hsl(var(--muted-foreground))', headerBg: 'transparent' } });
     }
     
     return familyGroups;
