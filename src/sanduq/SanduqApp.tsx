@@ -431,6 +431,25 @@ export default function SanduqApp() {
     return result;
   })();
 
+  const toggleFamily = (familyId: string) => {
+    setCollapsedFamilies(prev => {
+      const next = new Set(prev);
+      next.has(familyId) ? next.delete(familyId) : next.add(familyId);
+      return next;
+    });
+  };
+
+  const getFamilyDisplayName = (head: Member) => familyNames[head.id] || `بيت ${head.name}`;
+
+  const saveFamilyName = (headId: string, name: string) => {
+    const trimmed = name.trim();
+    const updated = { ...familyNames };
+    if (trimmed) { updated[headId] = trimmed; } else { delete updated[headId]; }
+    setFamilyNames(updated);
+    localStorage.setItem('sanduq_family_names', JSON.stringify(updated));
+    setEditingFamilyId(null);
+  };
+
   return (
     <div className="min-h-screen font-sans text-foreground pb-20 sm:pb-6 relative transition-colors duration-200 bg-background">
       {/* HEADER */}
