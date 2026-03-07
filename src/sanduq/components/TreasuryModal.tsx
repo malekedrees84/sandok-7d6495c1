@@ -17,8 +17,8 @@ interface TreasuryModalProps {
 export const TreasuryModal: React.FC<TreasuryModalProps> = ({ isOpen, onClose, transactions, onAddTransaction, onDeleteTransaction, canEdit }) => {
   const [showForm, setShowForm] = useState(false);
   const [type, setType] = useState<'deposit' | 'withdraw' | 'transfer'>('deposit');
-  const [holder, setHolder] = useState(TREASURY_HOLDERS[0]);
-  const [toHolder, setToHolder] = useState(TREASURY_HOLDERS[1]);
+  const [holder, setHolder] = useState<string>(TREASURY_HOLDERS[0]);
+  const [toHolder, setToHolder] = useState<string>(TREASURY_HOLDERS[1]);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [filterHolder, setFilterHolder] = useState<string>('all');
