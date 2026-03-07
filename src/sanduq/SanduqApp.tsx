@@ -659,7 +659,8 @@ export default function SanduqApp() {
                             );
                           })}
                         </React.Fragment>
-                      )) : filteredMembers.map(member => {
+                        );
+                      }) : filteredMembers.map(member => {
                         const statusInfo = getMemberStatus(member.paidUntil);
                         return (
                           <tr key={member.id} onClick={() => setViewMemberHistory(member)} className={`hover:bg-accent/50 transition cursor-pointer group ${statusInfo.status === 'late' ? 'animate-pulse-red-glow' : ''}`}>
