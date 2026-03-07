@@ -743,8 +743,17 @@ export default function SanduqApp() {
                     const familyId = group.head?.id || `orphan-${gi}`;
                     const isCollapsed = collapsedFamilies.has(familyId);
                     return (
-                    <div key={gi} style={{ borderRight: group.members.length > 1 ? `3px solid ${group.color.text}` : undefined }}>
-                      {group.members.length > 1 && group.head && (
+                    <div key={gi} style={{ borderRight: (group.members.length > 1 && group.head) ? `3px solid ${group.color.text}` : undefined }}>
+                      {group.head === null && !group.members.some(m => m.headMemberId) && (
+                        <div className="px-3.5 py-2 border-b border-border cursor-pointer select-none bg-secondary/30" onClick={() => toggleFamily(familyId)}>
+                          <span className="text-[11px] font-bold flex items-center gap-1.5 text-muted-foreground">
+                            {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                            <User size={12} />
+                            أعضاء بدون عائلة ({group.members.length})
+                          </span>
+                        </div>
+                      )}
+                      {group.head && (
                         <div className="px-3.5 py-2 border-b border-border cursor-pointer select-none" style={{ backgroundColor: group.color.headerBg }} onClick={() => toggleFamily(familyId)}>
                           <span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}>
                             {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
@@ -756,7 +765,7 @@ export default function SanduqApp() {
                                 <button onClick={() => setEditingFamilyId(null)} className="p-0.5"><XIcon size={11} /></button>
                               </span>
                             ) : (
-                              <span>{getFamilyDisplayName(group.head)} ({group.members.length})</span>
+                              <span>{getFamilyDisplayName(group.head)} ({group.members.length}{group.members.length > 1 ? ' أعضاء' : ''})</span>
                             )}
                             {canEdit && editingFamilyId !== familyId && (
                               <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 mr-1"><Pencil size={10} /></button>
