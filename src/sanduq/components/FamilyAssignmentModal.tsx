@@ -6,7 +6,7 @@ interface FamilyAssignmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   members: Member[];
-  onAssign: (headId: string, dependentIds: string[]) => void;
+  onAssign: (headId: string, dependentIds: string[], familyName?: string) => void;
 }
 
 const getFirstName = (name: string): string => {
@@ -41,6 +41,7 @@ export const FamilyAssignmentModal: React.FC<FamilyAssignmentModalProps> = ({ is
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [searchHead, setSearchHead] = useState('');
   const [searchMember, setSearchMember] = useState('');
+  const [customFamilyName, setCustomFamilyName] = useState('');
 
   const potentialHeads = useMemo(() =>
     members.filter(m => !m.headMemberId).filter(m =>
@@ -109,11 +110,12 @@ export const FamilyAssignmentModal: React.FC<FamilyAssignmentModalProps> = ({ is
 
   const handleSave = () => {
     if (!selectedHeadId) return;
-    onAssign(selectedHeadId, Array.from(checkedIds));
+    onAssign(selectedHeadId, Array.from(checkedIds), customFamilyName.trim() || undefined);
     setSelectedHeadId('');
     setCheckedIds(new Set());
     setSearchHead('');
     setSearchMember('');
+    setCustomFamilyName('');
   };
 
   if (!isOpen) return null;
