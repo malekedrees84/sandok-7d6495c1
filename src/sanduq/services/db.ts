@@ -12,6 +12,7 @@ const toMember = (row: any): Member => ({
   lastReminderDate: row.last_reminder_date || undefined,
   status: row.status as 'active' | 'inactive',
   profileImage: row.profile_image || undefined,
+  headMemberId: row.head_member_id || undefined,
 });
 
 const toPayment = (row: any): PaymentTransaction => ({
@@ -67,6 +68,7 @@ export const db = {
       paid_until: m.paidUntil, total_paid: m.totalPaid,
       last_reminder_date: m.lastReminderDate || null,
       status: m.status, profile_image: m.profileImage || null,
+      head_member_id: m.headMemberId || null,
     });
     if (error) console.error('upsertMember error:', error);
   },
