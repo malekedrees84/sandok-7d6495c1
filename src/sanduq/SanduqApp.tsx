@@ -53,6 +53,7 @@ export default function SanduqApp() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'families' | 'members'>('families');
 
   // Modals
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
