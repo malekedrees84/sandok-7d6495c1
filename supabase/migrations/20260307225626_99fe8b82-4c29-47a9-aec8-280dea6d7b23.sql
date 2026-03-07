@@ -1,0 +1,1 @@
+ALTER TABLE public.members ADD COLUMN head_member_id text REFERENCES public.members(id) ON DELETE SET NULL DEFAULT NULL;

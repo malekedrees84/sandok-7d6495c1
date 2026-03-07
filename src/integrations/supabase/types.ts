@@ -101,6 +101,7 @@ export type Database = {
       members: {
         Row: {
           created_at: string | null
+          head_member_id: string | null
           id: string
           join_date: string
           last_reminder_date: string | null
@@ -113,6 +114,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          head_member_id?: string | null
           id: string
           join_date: string
           last_reminder_date?: string | null
@@ -125,6 +127,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          head_member_id?: string | null
           id?: string
           join_date?: string
           last_reminder_date?: string | null
@@ -135,7 +138,15 @@ export type Database = {
           status?: string
           total_paid?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "members_head_member_id_fkey"
+            columns: ["head_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
