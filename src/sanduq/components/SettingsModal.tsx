@@ -1,17 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Settings, Save, Database, ExternalLink, RefreshCw, Lock, Download, UploadCloud, Calculator, PenTool } from 'lucide-react';
+import { X, Settings, Save, Database, ExternalLink, RefreshCw, Lock, Download, UploadCloud, Calculator, PenTool, Loader2 } from 'lucide-react';
 import { getScriptUrl, setScriptUrl } from '../services/api';
 import { downloadJSON, readJSONFile } from '../utils';
+import { Member, PaymentTransaction, Expense } from '../types';
+import { db } from '../services/db';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRecalculate?: () => void;
+  members: Member[];
+  payments: PaymentTransaction[];
+  expenses: Expense[];
+  onDataRestored: () => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onRecalculate }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onRecalculate, members, payments, expenses, onDataRestored }) => {
   const [url, setUrl] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const backupInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -26,25 +33,84 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
   };
 
   const handleCreateBackup = () => {
-    const members = JSON.parse(localStorage.getItem('sanduq_members_clean_v1') || '[]');
-    const payments = JSON.parse(localStorage.getItem('sanduq_payments_clean_v1') || '[]');
-    const expenses = JSON.parse(localStorage.getItem('sanduq_expenses_clean_v1') || '[]');
     downloadJSON({ version: "1.0", exportDate: new Date().toISOString(), members, payments, expenses }, "sanduq_backup");
   };
 
   const handleRestoreBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!window.confirm("تحذير: سيتم استبدال البيانات الحالية. هل أنت متأكد؟")) { if (backupInputRef.current) backupInputRef.current.value = ''; return; }
+    if (!window.confirm("تحذير: سيتم استبدال البيانات الحالية بالكامل. هل أنت متأكد؟")) {
+      if (backupInputRef.current) backupInputRef.current.value = '';
+      return;
+    }
+    setIsRestoring(true);
     try {
       const data = await readJSONFile(file);
-      if (data.members) localStorage.setItem('sanduq_members_clean_v1', JSON.stringify(data.members));
-      if (data.payments) localStorage.setItem('sanduq_payments_clean_v1', JSON.stringify(data.payments));
-      if (data.expenses) localStorage.setItem('sanduq_expenses_clean_v1', JSON.stringify(data.expenses));
-      localStorage.setItem('sanduq_pending_sync', JSON.stringify({ members: true, payments: true, expenses: true }));
-      alert("تم استعادة النسخة الاحتياطية بنجاح!");
-      window.location.reload();
-    } catch { alert("حدث خطأ أثناء قراءة ملف النسخة الاحتياطية."); }
+      
+      // Delete all existing data first
+      await Promise.all([
+        db.deleteAllPayments(),
+        db.deleteAllExpenses(),
+        db.deleteAllAuditLogs(),
+        db.deleteAllVisitorLogs(),
+        db.deleteAllAnnouncements(),
+        db.deleteAllMembers(),
+      ]);
+
+      // Insert members
+      if (data.members && Array.isArray(data.members)) {
+        for (const m of data.members) {
+          await db.upsertMember({
+            id: m.id,
+            name: m.name,
+            phone: m.phone || '',
+            joinDate: m.joinDate,
+            paidUntil: m.paidUntil,
+            totalPaid: m.totalPaid || 0,
+            status: m.status || 'active',
+            lastReminderDate: m.lastReminderDate,
+            profileImage: m.profileImage,
+          });
+        }
+      }
+
+      // Insert payments
+      if (data.payments && Array.isArray(data.payments)) {
+        for (const p of data.payments) {
+          await db.insertPayment({
+            id: p.id,
+            memberId: p.memberId,
+            amount: p.amount,
+            date: p.date,
+            monthsCovered: p.monthsCovered || 1,
+            previousPaidUntil: p.previousPaidUntil || '',
+            newPaidUntil: p.newPaidUntil || '',
+          });
+        }
+      }
+
+      // Insert expenses
+      if (data.expenses && Array.isArray(data.expenses)) {
+        for (const exp of data.expenses) {
+          await db.insertExpense({
+            id: exp.id,
+            title: exp.title,
+            category: exp.category || '',
+            amount: exp.amount,
+            date: exp.date,
+            notes: exp.notes,
+          });
+        }
+      }
+
+      alert("تم استعادة النسخة الاحتياطية بنجاح! ✅");
+      onDataRestored();
+    } catch (err) {
+      console.error('Restore error:', err);
+      alert("حدث خطأ أثناء استعادة النسخة الاحتياطية.");
+    }
+    setIsRestoring(false);
+    if (backupInputRef.current) backupInputRef.current.value = '';
   };
 
   if (!isOpen) return null;
@@ -61,8 +127,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
             <h3 className="flex items-center gap-2 font-bold text-foreground"><Database size={18} /> النسخ الاحتياطي والاستعادة</h3>
             <div className="grid grid-cols-2 gap-3">
               <button onClick={handleCreateBackup} className="flex flex-col items-center justify-center gap-2 p-3 bg-card border border-border rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition"><Download size={20} /><span className="text-xs font-bold">تنزيل نسخة</span></button>
-              <button onClick={() => backupInputRef.current?.click()} className="flex flex-col items-center justify-center gap-2 p-3 bg-card border border-border rounded-lg hover:bg-green-50 hover:border-green-300 hover:text-green-600 transition">
-                <UploadCloud size={20} /><span className="text-xs font-bold">استعادة بيانات</span>
+              <button onClick={() => !isRestoring && backupInputRef.current?.click()} disabled={isRestoring} className="flex flex-col items-center justify-center gap-2 p-3 bg-card border border-border rounded-lg hover:bg-green-50 hover:border-green-300 hover:text-green-600 transition disabled:opacity-50">
+                {isRestoring ? <Loader2 size={20} className="animate-spin" /> : <UploadCloud size={20} />}
+                <span className="text-xs font-bold">{isRestoring ? 'جاري الاستعادة...' : 'استعادة بيانات'}</span>
                 <input type="file" ref={backupInputRef} onChange={handleRestoreBackup} accept=".json" className="hidden" />
               </button>
             </div>
