@@ -650,6 +650,17 @@ export default function SanduqApp() {
                         const isCollapsed = collapsedFamilies.has(familyId);
                         return (
                         <React.Fragment key={gi}>
+                          {group.head === null && !group.members.some(m => m.headMemberId) && (
+                            <tr>
+                              <td colSpan={5} className="px-5 py-1.5 cursor-pointer select-none bg-secondary/30" onClick={() => toggleFamily(familyId)}>
+                                <span className="text-[11px] font-bold flex items-center gap-1.5 text-muted-foreground">
+                                  {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                                  <User size={12} />
+                                  أعضاء بدون عائلة ({group.members.length})
+                                </span>
+                              </td>
+                            </tr>
+                          )}
                           {group.members.length > 1 && group.head && (
                             <tr>
                               <td colSpan={5} className="px-5 py-1.5 cursor-pointer select-none" style={{ backgroundColor: group.color.headerBg }} onClick={() => toggleFamily(familyId)}>
@@ -664,6 +675,28 @@ export default function SanduqApp() {
                                     </span>
                                   ) : (
                                     <span>{getFamilyDisplayName(group.head)} ({group.members.length} أعضاء)</span>
+                                  )}
+                                  {canEdit && editingFamilyId !== familyId && (
+                                    <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 rounded hover:bg-background/30 transition mr-1 opacity-60 hover:opacity-100"><Pencil size={10} /></button>
+                                  )}
+                                </span>
+                              </td>
+                            </tr>
+                          )}
+                          {group.head && group.members.length === 1 && (
+                            <tr>
+                              <td colSpan={5} className="px-5 py-1.5 cursor-pointer select-none" style={{ backgroundColor: group.color.headerBg }} onClick={() => toggleFamily(familyId)}>
+                                <span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}>
+                                  {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                                  <Users size={12} />
+                                  {editingFamilyId === familyId ? (
+                                    <span className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                      <input autoFocus value={editingFamilyName} onChange={e => setEditingFamilyName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveFamilyName(familyId, editingFamilyName); if (e.key === 'Escape') setEditingFamilyId(null); }} className="h-5 px-1.5 text-[11px] font-bold rounded border border-current bg-background/80 outline-none w-32" style={{ color: group.color.text }} />
+                                      <button onClick={() => saveFamilyName(familyId, editingFamilyName)} className="p-0.5 rounded hover:bg-background/30"><Check size={11} /></button>
+                                      <button onClick={() => setEditingFamilyId(null)} className="p-0.5 rounded hover:bg-background/30"><XIcon size={11} /></button>
+                                    </span>
+                                  ) : (
+                                    <span>{getFamilyDisplayName(group.head)}</span>
                                   )}
                                   {canEdit && editingFamilyId !== familyId && (
                                     <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 rounded hover:bg-background/30 transition mr-1 opacity-60 hover:opacity-100"><Pencil size={10} /></button>
