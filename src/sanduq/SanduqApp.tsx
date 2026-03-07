@@ -421,20 +421,41 @@ export default function SanduqApp() {
     { bg: 'hsl(350 80% 50% / 0.08)', border: 'hsl(350 80% 50% / 0.25)', text: 'hsl(350 80% 50%)', headerBg: 'hsl(350 80% 50% / 0.12)' },
   ];
 
-  // Group members by family: heads first, then their dependents
+  // Group members by family: families first, then ungrouped individuals at the bottom
   const groupedMembers = (() => {
     const heads = filteredMembers.filter(m => !m.headMemberId);
     const dependents = filteredMembers.filter(m => m.headMemberId);
-    const result: { head: Member | null; members: Member[]; color: typeof familyColors[0] }[] = [];
-    heads.forEach((h, i) => {
+    const familyGroups: { head: Member | null; members: Member[]; color: typeof familyColors[0] }[] = [];
+    const ungrouped: Member[] = [];
+    let colorIdx = 0;
+    
+    heads.forEach((h) => {
       const deps = dependents.filter(d => d.headMemberId === h.id);
-      result.push({ head: h, members: [h, ...deps], color: familyColors[i % familyColors.length] });
+      const savedNames = JSON.parse(localStorage.getItem('sanduq_family_names') || '{}');
+      const hasFamilyName = !!savedNames[h.id];
+      // If head has dependents or a custom family name, it's a family group
+      if (deps.length > 0 || hasFamilyName) {
+        familyGroups.push({ head: h, members: [h, ...deps], color: familyColors[colorIdx % familyColors.length] });
+        colorIdx++;
+      } else {
+        ungrouped.push(h);
+      }
     });
+    
     // Orphan dependents (head not in filtered list)
-    const usedDepIds = new Set(result.flatMap(g => g.members.map(m => m.id)));
+    const usedDepIds = new Set(familyGroups.flatMap(g => g.members.map(m => m.id)));
     const orphans = dependents.filter(d => !usedDepIds.has(d.id));
-    if (orphans.length > 0) result.push({ head: null, members: orphans, color: familyColors[result.length % familyColors.length] });
-    return result;
+    if (orphans.length > 0) {
+      familyGroups.push({ head: null, members: orphans, color: familyColors[colorIdx % familyColors.length] });
+      colorIdx++;
+    }
+    
+    // Add ungrouped members as a single group at the bottom
+    if (ungrouped.length > 0) {
+      familyGroups.push({ head: null, members: ungrouped, color: { bg: 'transparent', text: 'hsl(var(--muted-foreground))' } });
+    }
+    
+    return familyGroups;
   })();
 
   const toggleFamily = (familyId: string) => {
