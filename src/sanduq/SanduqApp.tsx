@@ -561,10 +561,16 @@ export default function SanduqApp() {
                   </div>
                   <div className="flex flex-col xs:flex-row gap-2">
                     <div className="relative flex-1"><input type="text" placeholder="بحث بالاسم..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full h-8 pl-3 pr-8 bg-secondary border border-border rounded-md text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" /><Search className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} /></div>
-                    <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="h-8 px-2.5 bg-secondary border border-border rounded-md text-xs min-w-0 focus:outline-none focus:ring-1 focus:ring-ring">
-                      <option value="all">الجميع</option>
-                      {Array.from(new Set(members.map(m => m.paidUntil))).sort().reverse().map((date: string) => <option key={date} value={date}>{formatDisplayDate(date)}</option>)}
-                    </select>
+                    <div className="flex gap-1.5">
+                      <div className="flex bg-secondary border border-border rounded-md overflow-hidden">
+                        <button onClick={() => setViewMode('families')} className={`h-8 px-2.5 text-[11px] font-medium transition flex items-center gap-1 ${viewMode === 'families' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}><Users size={12} /> عائلات</button>
+                        <button onClick={() => setViewMode('members')} className={`h-8 px-2.5 text-[11px] font-medium transition flex items-center gap-1 ${viewMode === 'members' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}><User size={12} /> أفراد</button>
+                      </div>
+                      <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="h-8 px-2.5 bg-secondary border border-border rounded-md text-xs min-w-0 focus:outline-none focus:ring-1 focus:ring-ring">
+                        <option value="all">الجميع</option>
+                        {Array.from(new Set(members.map(m => m.paidUntil))).sort().reverse().map((date: string) => <option key={date} value={date}>{formatDisplayDate(date)}</option>)}
+                      </select>
+                    </div>
                   </div>
                 </div>
 
