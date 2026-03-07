@@ -365,6 +365,22 @@ export default function SanduqApp() {
 
   const filteredMembers = members.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()) && (filterMonth === 'all' || m.paidUntil === filterMonth));
 
+  // Group members by family: heads first, then their dependents
+  const groupedMembers = (() => {
+    const heads = filteredMembers.filter(m => !m.headMemberId);
+    const dependents = filteredMembers.filter(m => m.headMemberId);
+    const result: { head: Member | null; members: Member[] }[] = [];
+    heads.forEach(h => {
+      const deps = dependents.filter(d => d.headMemberId === h.id);
+      result.push({ head: h, members: [h, ...deps] });
+    });
+    // Orphan dependents (head not in filtered list)
+    const usedDepIds = new Set(result.flatMap(g => g.members.map(m => m.id)));
+    const orphans = dependents.filter(d => !usedDepIds.has(d.id));
+    if (orphans.length > 0) result.push({ head: null, members: orphans });
+    return result;
+  })();
+
   return (
     <div className="min-h-screen font-sans text-foreground pb-20 sm:pb-6 relative transition-colors duration-200 bg-background">
       {/* HEADER */}
