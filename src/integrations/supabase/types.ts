@@ -14,7 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      announcements: {
+        Row: {
+          active: boolean
+          created_at: string | null
+          created_at_text: string
+          id: string
+          image: string | null
+          text: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string | null
+          created_at_text: string
+          id: string
+          image?: string | null
+          text?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string | null
+          created_at_text?: string
+          id?: string
+          image?: string | null
+          text?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: string
+          id: string
+          timestamp: string
+          user: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: string
+          id: string
+          timestamp: string
+          user: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: string
+          id?: string
+          timestamp?: string
+          user?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          date: string
+          id: string
+          notes: string | null
+          title: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string | null
+          date: string
+          id: string
+          notes?: string | null
+          title: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      members: {
+        Row: {
+          created_at: string | null
+          id: string
+          join_date: string
+          last_reminder_date: string | null
+          name: string
+          paid_until: string
+          phone: string | null
+          profile_image: string | null
+          status: string
+          total_paid: number
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          join_date: string
+          last_reminder_date?: string | null
+          name: string
+          paid_until: string
+          phone?: string | null
+          profile_image?: string | null
+          status?: string
+          total_paid?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          join_date?: string
+          last_reminder_date?: string | null
+          name?: string
+          paid_until?: string
+          phone?: string | null
+          profile_image?: string | null
+          status?: string
+          total_paid?: number
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string
+          id: string
+          member_id: string
+          months_covered: number
+          new_paid_until: string | null
+          previous_paid_until: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date: string
+          id: string
+          member_id: string
+          months_covered?: number
+          new_paid_until?: string | null
+          previous_paid_until?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string
+          id?: string
+          member_id?: string
+          months_covered?: number
+          new_paid_until?: string | null
+          previous_paid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visitor_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          phone: string
+          timestamp: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          phone: string
+          timestamp: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          phone?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
