@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Member, START_DATE } from '../types';
-import { X, User, Calendar, Save, Phone, Camera, Upload } from 'lucide-react';
+import { X, User, Calendar, Save, Phone, Camera, Upload, Users } from 'lucide-react';
 import { compressImage } from '../utils';
 
 interface EditMemberModalProps {
@@ -8,13 +8,15 @@ interface EditMemberModalProps {
   onClose: () => void;
   member: Member | null;
   onUpdate: (updatedMember: Member) => void;
+  allMembers?: Member[];
 }
 
-export const EditMemberModal: React.FC<EditMemberModalProps> = ({ isOpen, onClose, member, onUpdate }) => {
+export const EditMemberModal: React.FC<EditMemberModalProps> = ({ isOpen, onClose, member, onUpdate, allMembers = [] }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [joinDate, setJoinDate] = useState('');
   const [profileImage, setProfileImage] = useState<string | undefined>(undefined);
+  const [headMemberId, setHeadMemberId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -23,6 +25,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ isOpen, onClos
       setPhone(member.phone || '');
       setJoinDate(member.joinDate || START_DATE);
       setProfileImage(member.profileImage);
+      setHeadMemberId(member.headMemberId || '');
     }
   }, [isOpen, member]);
 
@@ -31,7 +34,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ isOpen, onClos
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      onUpdate({ ...member, name: name.trim(), phone: phone.trim(), joinDate, profileImage });
+      onUpdate({ ...member, name: name.trim(), phone: phone.trim(), joinDate, profileImage, headMemberId: headMemberId || undefined });
     }
   };
 
@@ -42,6 +45,8 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ isOpen, onClos
       catch { alert("حدث خطأ أثناء معالجة الصورة"); }
     }
   };
+
+  const availableHeads = allMembers.filter(m => m.id !== member.id && !m.headMemberId);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 backdrop-blur-sm">
@@ -72,6 +77,13 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ isOpen, onClos
               <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full p-3 pl-10 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none dir-ltr text-right" />
               <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-1 flex items-center gap-2"><Users size={16} /> الانتماء العائلي</label>
+            <select value={headMemberId} onChange={(e) => setHeadMemberId(e.target.value)} className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none">
+              <option value="">رب الأسرة (مستقل)</option>
+              {availableHeads.map(m => <option key={m.id} value={m.id}>تابع لـ {m.name}</option>)}
+            </select>
           </div>
           <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
             <label className="block text-sm font-bold text-yellow-800 mb-1 flex items-center gap-2"><Calendar size={16} /> تاريخ الانضمام</label>
