@@ -315,7 +315,7 @@ export default function SanduqApp() {
     return data;
   };
   const chartData = getChartData();
-  const recentTransactions = [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5).map(t => ({ ...t, memberName: members.find(m => m.id === t.memberId)?.name || 'عضو محذوف' }));
+  const recentTransactions = [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 20).map(t => ({ ...t, memberName: members.find(m => m.id === t.memberId)?.name || 'عضو محذوف' }));
 
   const getCategoryStyle = (category: string) => {
     if (category.includes('فرح')) return 'bg-pink-50 text-pink-700 border border-pink-200';
@@ -432,8 +432,8 @@ export default function SanduqApp() {
                   <Sparkles size={16} /> المساعد الذكي
                 </button>
                 <div className="flex-1 bg-secondary/50 rounded-lg p-3 border border-border overflow-hidden">
-                  <h4 className="font-semibold text-foreground mb-2 text-xs">آخر 5 دفعات</h4>
-                  <div className="space-y-2">
+                  <h4 className="font-semibold text-foreground mb-2 text-xs">آخر 20 دفعة</h4>
+                  <div className="max-h-60 overflow-y-auto space-y-2 scrollbar-thin">
                     {recentTransactions.length === 0 && <p className="text-[11px] text-muted-foreground text-center py-4">لا توجد دفعات بعد</p>}
                     {recentTransactions.map((tx, idx) => (
                       <div key={idx} className="flex justify-between items-center border-b border-border/50 pb-1.5 last:border-0 last:pb-0">
@@ -441,7 +441,10 @@ export default function SanduqApp() {
                           <div className="w-6 h-6 shrink-0 rounded-md bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">{tx.memberName.charAt(0)}</div>
                           <p className="text-[11px] font-medium text-foreground truncate">{tx.memberName}</p>
                         </div>
-                        <span className={`text-[11px] font-bold shrink-0 dir-ltr ${tx.amount > 0 ? 'text-[hsl(var(--success))]' : 'text-destructive'}`}>{tx.amount > 0 ? '+' : ''}{tx.amount}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] text-muted-foreground">{format(new Date(tx.date), 'dd/MM/yyyy')}</span>
+                          <span className={`text-[11px] font-bold dir-ltr ${tx.amount > 0 ? 'text-[hsl(var(--success))]' : 'text-destructive'}`}>{tx.amount > 0 ? '+' : ''}{tx.amount}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
