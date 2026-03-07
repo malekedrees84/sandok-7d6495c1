@@ -8,6 +8,7 @@ export interface Member {
   lastReminderDate?: string;
   status: 'active' | 'inactive';
   profileImage?: string;
+  headMemberId?: string;
 }
 
 export interface PaymentTransaction {
