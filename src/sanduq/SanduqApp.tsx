@@ -450,6 +450,11 @@ export default function SanduqApp() {
                 <button onClick={() => setIsAIChatOpen(true)} className="w-full py-3 sm:py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold hover:opacity-90 transition shadow-md text-white" style={{ background: 'var(--gradient-primary)' }}>
                   <Sparkles size={16} /> المساعد الذكي
                 </button>
+                {canEdit && (
+                  <button onClick={() => setIsTreasuryOpen(true)} className="w-full py-3 sm:py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold border-2 border-primary text-primary hover:bg-primary/5 transition">
+                    <Vault size={16} /> الخزينة
+                  </button>
+                )}
                 <div className="flex-1 bg-secondary/50 rounded-lg p-3 border border-border overflow-hidden">
                   <h4 className="font-semibold text-foreground mb-2 text-xs">آخر 20 دفعة</h4>
                   <div className="max-h-60 overflow-y-auto space-y-2 scrollbar-thin">
