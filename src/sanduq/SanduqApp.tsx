@@ -679,12 +679,32 @@ export default function SanduqApp() {
                 {/* Mobile card list */}
                 <div className="md:hidden divide-y divide-border">
                   {filteredMembers.length === 0 && <div className="text-center py-10 text-muted-foreground text-xs">لا يوجد أعضاء</div>}
-                  {viewMode === 'families' ? groupedMembers.map((group, gi) => (
+                  {viewMode === 'families' ? groupedMembers.map((group, gi) => {
+                    const familyId = group.head?.id || `orphan-${gi}`;
+                    const isCollapsed = collapsedFamilies.has(familyId);
+                    return (
                     <div key={gi} style={{ borderRight: group.members.length > 1 ? `3px solid ${group.color.text}` : undefined }}>
                       {group.members.length > 1 && group.head && (
-                        <div className="px-3.5 py-2 border-b border-border" style={{ backgroundColor: group.color.headerBg }}><span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}><Users size={12} /> بيت {group.head.name} ({group.members.length})</span></div>
+                        <div className="px-3.5 py-2 border-b border-border cursor-pointer select-none" style={{ backgroundColor: group.color.headerBg }} onClick={() => toggleFamily(familyId)}>
+                          <span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}>
+                            {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                            <Users size={12} />
+                            {editingFamilyId === familyId ? (
+                              <span className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                <input autoFocus value={editingFamilyName} onChange={e => setEditingFamilyName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveFamilyName(familyId, editingFamilyName); if (e.key === 'Escape') setEditingFamilyId(null); }} className="h-5 px-1.5 text-[11px] font-bold rounded border border-current bg-background/80 outline-none w-28" style={{ color: group.color.text }} />
+                                <button onClick={() => saveFamilyName(familyId, editingFamilyName)} className="p-0.5"><Check size={11} /></button>
+                                <button onClick={() => setEditingFamilyId(null)} className="p-0.5"><XIcon size={11} /></button>
+                              </span>
+                            ) : (
+                              <span>{getFamilyDisplayName(group.head)} ({group.members.length})</span>
+                            )}
+                            {canEdit && editingFamilyId !== familyId && (
+                              <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 mr-1"><Pencil size={10} /></button>
+                            )}
+                          </span>
+                        </div>
                       )}
-                      {group.members.map(member => {
+                      {!isCollapsed && group.members.map(member => {
                         const statusInfo = getMemberStatus(member.paidUntil);
                         const isDependent = !!member.headMemberId;
                         return (
