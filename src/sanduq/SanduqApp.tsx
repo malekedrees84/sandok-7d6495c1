@@ -72,8 +72,10 @@ export default function SanduqApp() {
   const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
   const [isAddMemberMode, setIsAddMemberMode] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberPhone, setNewMemberPhone] = useState('');
   const [newMemberJoinDate, setNewMemberJoinDate] = useState(new Date().toISOString().slice(0, 10));
   const [newMemberImage, setNewMemberImage] = useState<string | undefined>(undefined);
+  const [newMemberHeadId, setNewMemberHeadId] = useState<string>('');
 
   // Network
   useEffect(() => {
@@ -162,12 +164,12 @@ export default function SanduqApp() {
     e.preventDefault();
     if (!newMemberName.trim()) return;
     await withSaving(async () => {
-      const newMember: Member = { id: Date.now().toString(), name: newMemberName.trim(), phone: '', joinDate: newMemberJoinDate, paidUntil: formatMonthStr(addMonths(parseMonthStr(newMemberJoinDate), -1)), totalPaid: 0, status: 'active', profileImage: newMemberImage };
+      const newMember: Member = { id: Date.now().toString(), name: newMemberName.trim(), phone: newMemberPhone.trim(), joinDate: newMemberJoinDate, paidUntil: formatMonthStr(addMonths(parseMonthStr(newMemberJoinDate), -1)), totalPaid: 0, status: 'active', profileImage: newMemberImage, headMemberId: newMemberHeadId || undefined };
       await db.upsertMember(newMember);
       setMembers(prev => [...prev, newMember]);
       await logAction('إضافة عضو', `إضافة العضو الجديد: ${newMemberName}`);
     });
-    setIsAddMemberMode(false); setNewMemberName(''); setNewMemberImage(undefined);
+    setIsAddMemberMode(false); setNewMemberName(''); setNewMemberPhone(''); setNewMemberImage(undefined); setNewMemberHeadId('');
   };
 
   const handleUpdateMember = async (updatedInfo: Member) => {
