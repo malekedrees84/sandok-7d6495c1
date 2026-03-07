@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Users, User, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown, Vault } from 'lucide-react';
+import { Users, User, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown, ChevronRight, Vault, Pencil, Check } from 'lucide-react';
 import { Member, PaymentTransaction, Expense, MONTHLY_FEE, START_DATE, AuditLog, VisitorLog, Announcement, TreasuryTransaction } from './types';
 import { StatCard } from './components/StatCard';
 import { PaymentModal } from './components/PaymentModal';
@@ -54,6 +54,12 @@ export default function SanduqApp() {
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'families' | 'members'>('families');
+  const [collapsedFamilies, setCollapsedFamilies] = useState<Set<string>>(new Set());
+  const [familyNames, setFamilyNames] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('sanduq_family_names') || '{}'); } catch { return {}; }
+  });
+  const [editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
+  const [editingFamilyName, setEditingFamilyName] = useState('');
 
   // Modals
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -425,6 +431,25 @@ export default function SanduqApp() {
     return result;
   })();
 
+  const toggleFamily = (familyId: string) => {
+    setCollapsedFamilies(prev => {
+      const next = new Set(prev);
+      next.has(familyId) ? next.delete(familyId) : next.add(familyId);
+      return next;
+    });
+  };
+
+  const getFamilyDisplayName = (head: Member) => familyNames[head.id] || `بيت ${head.name}`;
+
+  const saveFamilyName = (headId: string, name: string) => {
+    const trimmed = name.trim();
+    const updated = { ...familyNames };
+    if (trimmed) { updated[headId] = trimmed; } else { delete updated[headId]; }
+    setFamilyNames(updated);
+    localStorage.setItem('sanduq_family_names', JSON.stringify(updated));
+    setEditingFamilyId(null);
+  };
+
   return (
     <div className="min-h-screen font-sans text-foreground pb-20 sm:pb-6 relative transition-colors duration-200 bg-background">
       {/* HEADER */}
@@ -593,12 +618,34 @@ export default function SanduqApp() {
                   <table className="w-full text-right">
                     <thead className="bg-secondary/50 text-muted-foreground text-xs font-medium"><tr><th className="px-5 py-3">العضو</th><th className="px-5 py-3">مدفوع لغاية</th><th className="px-5 py-3">المجموع</th><th className="px-5 py-3">الحالة</th><th className="px-5 py-3 text-center">الإجراء</th></tr></thead>
                     <tbody className="divide-y divide-border">
-                      {viewMode === 'families' ? groupedMembers.map((group, gi) => (
+                      {viewMode === 'families' ? groupedMembers.map((group, gi) => {
+                        const familyId = group.head?.id || `orphan-${gi}`;
+                        const isCollapsed = collapsedFamilies.has(familyId);
+                        return (
                         <React.Fragment key={gi}>
                           {group.members.length > 1 && group.head && (
-                            <tr><td colSpan={5} className="px-5 py-1.5" style={{ backgroundColor: group.color.headerBg }}><span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}><Users size={12} /> بيت {group.head.name} ({group.members.length} أعضاء)</span></td></tr>
+                            <tr>
+                              <td colSpan={5} className="px-5 py-1.5 cursor-pointer select-none" style={{ backgroundColor: group.color.headerBg }} onClick={() => toggleFamily(familyId)}>
+                                <span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}>
+                                  {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                                  <Users size={12} />
+                                  {editingFamilyId === familyId ? (
+                                    <span className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                      <input autoFocus value={editingFamilyName} onChange={e => setEditingFamilyName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveFamilyName(familyId, editingFamilyName); if (e.key === 'Escape') setEditingFamilyId(null); }} className="h-5 px-1.5 text-[11px] font-bold rounded border border-current bg-background/80 outline-none w-32" style={{ color: group.color.text }} />
+                                      <button onClick={() => saveFamilyName(familyId, editingFamilyName)} className="p-0.5 rounded hover:bg-background/30"><Check size={11} /></button>
+                                      <button onClick={() => setEditingFamilyId(null)} className="p-0.5 rounded hover:bg-background/30"><XIcon size={11} /></button>
+                                    </span>
+                                  ) : (
+                                    <span>{getFamilyDisplayName(group.head)} ({group.members.length} أعضاء)</span>
+                                  )}
+                                  {canEdit && editingFamilyId !== familyId && (
+                                    <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 rounded hover:bg-background/30 opacity-0 group-hover:opacity-100 transition mr-1"><Pencil size={10} /></button>
+                                  )}
+                                </span>
+                              </td>
+                            </tr>
                           )}
-                          {group.members.map(member => {
+                          {!isCollapsed && group.members.map(member => {
                             const statusInfo = getMemberStatus(member.paidUntil);
                             const isDependent = !!member.headMemberId;
                             return (
@@ -612,7 +659,8 @@ export default function SanduqApp() {
                             );
                           })}
                         </React.Fragment>
-                      )) : filteredMembers.map(member => {
+                        );
+                      }) : filteredMembers.map(member => {
                         const statusInfo = getMemberStatus(member.paidUntil);
                         return (
                           <tr key={member.id} onClick={() => setViewMemberHistory(member)} className={`hover:bg-accent/50 transition cursor-pointer group ${statusInfo.status === 'late' ? 'animate-pulse-red-glow' : ''}`}>
@@ -631,12 +679,32 @@ export default function SanduqApp() {
                 {/* Mobile card list */}
                 <div className="md:hidden divide-y divide-border">
                   {filteredMembers.length === 0 && <div className="text-center py-10 text-muted-foreground text-xs">لا يوجد أعضاء</div>}
-                  {viewMode === 'families' ? groupedMembers.map((group, gi) => (
+                  {viewMode === 'families' ? groupedMembers.map((group, gi) => {
+                    const familyId = group.head?.id || `orphan-${gi}`;
+                    const isCollapsed = collapsedFamilies.has(familyId);
+                    return (
                     <div key={gi} style={{ borderRight: group.members.length > 1 ? `3px solid ${group.color.text}` : undefined }}>
                       {group.members.length > 1 && group.head && (
-                        <div className="px-3.5 py-2 border-b border-border" style={{ backgroundColor: group.color.headerBg }}><span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}><Users size={12} /> بيت {group.head.name} ({group.members.length})</span></div>
+                        <div className="px-3.5 py-2 border-b border-border cursor-pointer select-none" style={{ backgroundColor: group.color.headerBg }} onClick={() => toggleFamily(familyId)}>
+                          <span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}>
+                            {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                            <Users size={12} />
+                            {editingFamilyId === familyId ? (
+                              <span className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                <input autoFocus value={editingFamilyName} onChange={e => setEditingFamilyName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveFamilyName(familyId, editingFamilyName); if (e.key === 'Escape') setEditingFamilyId(null); }} className="h-5 px-1.5 text-[11px] font-bold rounded border border-current bg-background/80 outline-none w-28" style={{ color: group.color.text }} />
+                                <button onClick={() => saveFamilyName(familyId, editingFamilyName)} className="p-0.5"><Check size={11} /></button>
+                                <button onClick={() => setEditingFamilyId(null)} className="p-0.5"><XIcon size={11} /></button>
+                              </span>
+                            ) : (
+                              <span>{getFamilyDisplayName(group.head)} ({group.members.length})</span>
+                            )}
+                            {canEdit && editingFamilyId !== familyId && (
+                              <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 mr-1"><Pencil size={10} /></button>
+                            )}
+                          </span>
+                        </div>
                       )}
-                      {group.members.map(member => {
+                      {!isCollapsed && group.members.map(member => {
                         const statusInfo = getMemberStatus(member.paidUntil);
                         const isDependent = !!member.headMemberId;
                         return (
@@ -670,7 +738,8 @@ export default function SanduqApp() {
                         );
                       })}
                     </div>
-                  )) : filteredMembers.map(member => {
+                    );
+                  }) : filteredMembers.map(member => {
                     const statusInfo = getMemberStatus(member.paidUntil);
                     return (
                       <div key={member.id} onClick={() => setViewMemberHistory(member)} className={`p-3.5 hover:bg-accent/30 transition cursor-pointer active:bg-accent/50 ${statusInfo.status === 'late' ? 'animate-pulse-red-glow' : ''}`}>
