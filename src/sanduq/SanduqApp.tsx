@@ -639,7 +639,7 @@ export default function SanduqApp() {
                                     <span>{getFamilyDisplayName(group.head)} ({group.members.length} أعضاء)</span>
                                   )}
                                   {canEdit && editingFamilyId !== familyId && (
-                                    <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 rounded hover:bg-background/30 opacity-0 group-hover:opacity-100 transition mr-1"><Pencil size={10} /></button>
+                                    <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 rounded hover:bg-background/30 transition mr-1 opacity-60 hover:opacity-100"><Pencil size={10} /></button>
                                   )}
                                 </span>
                               </td>
