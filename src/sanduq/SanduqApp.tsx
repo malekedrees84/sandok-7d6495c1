@@ -619,7 +619,7 @@ export default function SanduqApp() {
         onAddMember={async (n, p, j) => { const m: Member = { id: Date.now().toString(), name: n, phone: p, joinDate: j || START_DATE, paidUntil: formatMonthStr(addMonths(parseMonthStr(j || START_DATE), -1)), totalPaid: 0, status: 'active' }; await db.upsertMember(m); setMembers(prev => [...prev, m]); }}
         onBatchAddMembers={async (l) => { for (const item of l) { const m: Member = { id: Date.now().toString() + Math.random().toString().slice(2, 5), name: item.name, phone: item.phone, joinDate: item.joinDate || START_DATE, paidUntil: formatMonthStr(addMonths(parseMonthStr(item.joinDate || START_DATE), -1)), totalPaid: 0, status: 'active' }; await db.upsertMember(m); setMembers(prev => [...prev, m]); } }}
         onDeleteMember={handleDeleteMember} onUpdateMember={handleUpdateMember} onBulkUpdateJoinDate={() => {}} isAdmin={isAdmin} userRole={userRole} />
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onRecalculate={handleRecalculateStatus} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onRecalculate={handleRecalculateStatus} members={members} payments={payments} expenses={expenses} onDataRestored={loadAllData} />
       <MonthlyReportModal isOpen={isMonthlyReportOpen} onClose={() => setIsMonthlyReportOpen(false)} members={members} isAdmin={canEdit} />
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} member={selectedMember} onConfirm={handleConfirmPayment} />
       <MemberHistoryModal isOpen={!!viewMemberHistory} onClose={() => setViewMemberHistory(null)} member={viewMemberHistory} transactions={payments} onDeleteTransaction={isAdmin ? handleDeleteTransaction : undefined} />
