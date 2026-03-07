@@ -71,6 +71,7 @@ export default function SanduqApp() {
   const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
   const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
+  const [isFamilyAssignOpen, setIsFamilyAssignOpen] = useState(false);
   const [isAddMemberMode, setIsAddMemberMode] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberPhone, setNewMemberPhone] = useState('');
