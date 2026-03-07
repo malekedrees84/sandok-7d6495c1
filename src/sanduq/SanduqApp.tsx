@@ -395,19 +395,33 @@ export default function SanduqApp() {
 
   const filteredMembers = members.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()) && (filterMonth === 'all' || m.paidUntil === filterMonth));
 
+  // Family color palette using HSL semantic tokens
+  const familyColors = [
+    { bg: 'hsl(262 83% 58% / 0.08)', border: 'hsl(262 83% 58% / 0.25)', text: 'hsl(262 83% 58%)', headerBg: 'hsl(262 83% 58% / 0.12)' },
+    { bg: 'hsl(175 70% 41% / 0.08)', border: 'hsl(175 70% 41% / 0.25)', text: 'hsl(175 70% 41%)', headerBg: 'hsl(175 70% 41% / 0.12)' },
+    { bg: 'hsl(330 85% 60% / 0.08)', border: 'hsl(330 85% 60% / 0.25)', text: 'hsl(330 85% 60%)', headerBg: 'hsl(330 85% 60% / 0.12)' },
+    { bg: 'hsl(38 92% 50% / 0.08)', border: 'hsl(38 92% 50% / 0.25)', text: 'hsl(38 92% 50%)', headerBg: 'hsl(38 92% 50% / 0.12)' },
+    { bg: 'hsl(207 90% 54% / 0.08)', border: 'hsl(207 90% 54% / 0.25)', text: 'hsl(207 90% 54%)', headerBg: 'hsl(207 90% 54% / 0.12)' },
+    { bg: 'hsl(160 84% 39% / 0.08)', border: 'hsl(160 84% 39% / 0.25)', text: 'hsl(160 84% 39%)', headerBg: 'hsl(160 84% 39% / 0.12)' },
+    { bg: 'hsl(14 90% 55% / 0.08)', border: 'hsl(14 90% 55% / 0.25)', text: 'hsl(14 90% 55%)', headerBg: 'hsl(14 90% 55% / 0.12)' },
+    { bg: 'hsl(280 60% 50% / 0.08)', border: 'hsl(280 60% 50% / 0.25)', text: 'hsl(280 60% 50%)', headerBg: 'hsl(280 60% 50% / 0.12)' },
+    { bg: 'hsl(220 70% 50% / 0.08)', border: 'hsl(220 70% 50% / 0.25)', text: 'hsl(220 70% 50%)', headerBg: 'hsl(220 70% 50% / 0.12)' },
+    { bg: 'hsl(350 80% 50% / 0.08)', border: 'hsl(350 80% 50% / 0.25)', text: 'hsl(350 80% 50%)', headerBg: 'hsl(350 80% 50% / 0.12)' },
+  ];
+
   // Group members by family: heads first, then their dependents
   const groupedMembers = (() => {
     const heads = filteredMembers.filter(m => !m.headMemberId);
     const dependents = filteredMembers.filter(m => m.headMemberId);
-    const result: { head: Member | null; members: Member[] }[] = [];
-    heads.forEach(h => {
+    const result: { head: Member | null; members: Member[]; color: typeof familyColors[0] }[] = [];
+    heads.forEach((h, i) => {
       const deps = dependents.filter(d => d.headMemberId === h.id);
-      result.push({ head: h, members: [h, ...deps] });
+      result.push({ head: h, members: [h, ...deps], color: familyColors[i % familyColors.length] });
     });
     // Orphan dependents (head not in filtered list)
     const usedDepIds = new Set(result.flatMap(g => g.members.map(m => m.id)));
     const orphans = dependents.filter(d => !usedDepIds.has(d.id));
-    if (orphans.length > 0) result.push({ head: null, members: orphans });
+    if (orphans.length > 0) result.push({ head: null, members: orphans, color: familyColors[result.length % familyColors.length] });
     return result;
   })();
 
@@ -582,14 +596,14 @@ export default function SanduqApp() {
                       {viewMode === 'families' ? groupedMembers.map((group, gi) => (
                         <React.Fragment key={gi}>
                           {group.members.length > 1 && group.head && (
-                            <tr><td colSpan={5} className="px-5 py-1.5 bg-primary/5"><span className="text-[11px] font-bold text-primary flex items-center gap-1.5"><Users size={12} /> بيت {group.head.name} ({group.members.length} أعضاء)</span></td></tr>
+                            <tr><td colSpan={5} className="px-5 py-1.5" style={{ backgroundColor: group.color.headerBg }}><span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}><Users size={12} /> بيت {group.head.name} ({group.members.length} أعضاء)</span></td></tr>
                           )}
                           {group.members.map(member => {
                             const statusInfo = getMemberStatus(member.paidUntil);
                             const isDependent = !!member.headMemberId;
                             return (
-                              <tr key={member.id} onClick={() => setViewMemberHistory(member)} className={`hover:bg-accent/50 transition cursor-pointer group ${statusInfo.status === 'late' ? 'animate-pulse-red-glow' : ''}`}>
-                                <td className={`px-5 py-3 ${isDependent ? 'pr-10' : ''}`}><div className="font-medium text-foreground flex items-center gap-3 text-sm">{isDependent && <span className="text-muted-foreground/40 text-xs">└</span>}{member.profileImage ? <img src={member.profileImage} className="w-8 h-8 rounded-md object-cover shrink-0" /> : <div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">{member.name.charAt(0)}</div>}<div className="min-w-0"><div className="truncate">{member.name}</div><div className="text-[10px] text-muted-foreground font-normal">{member.phone}</div></div>{canEdit && <button onClick={(e) => { e.stopPropagation(); setEditingMember(member); setIsEditMemberModalOpen(true); }} className="text-muted-foreground/30 hover:text-primary p-1 mr-1 shrink-0 opacity-0 group-hover:opacity-100 transition"><Edit size={13} /></button>}</div></td>
+                              <tr key={member.id} onClick={() => setViewMemberHistory(member)} style={{ backgroundColor: group.members.length > 1 ? group.color.bg : undefined, borderRight: group.members.length > 1 ? `3px solid ${group.color.text}` : undefined }} className={`hover:bg-accent/50 transition cursor-pointer group ${statusInfo.status === 'late' ? 'animate-pulse-red-glow' : ''}`}>
+                                <td className={`px-5 py-3 ${isDependent ? 'pr-10' : ''}`}><div className="font-medium text-foreground flex items-center gap-3 text-sm">{isDependent && <span className="text-muted-foreground/40 text-xs">└</span>}{member.profileImage ? <img src={member.profileImage} className="w-8 h-8 rounded-md object-cover shrink-0" /> : <div className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold shrink-0" style={{ backgroundColor: `${group.color.text}20`, color: group.color.text }}>{member.name.charAt(0)}</div>}<div className="min-w-0"><div className="truncate">{member.name}</div><div className="text-[10px] text-muted-foreground font-normal">{member.phone}</div></div>{canEdit && <button onClick={(e) => { e.stopPropagation(); setEditingMember(member); setIsEditMemberModalOpen(true); }} className="text-muted-foreground/30 hover:text-primary p-1 mr-1 shrink-0 opacity-0 group-hover:opacity-100 transition"><Edit size={13} /></button>}</div></td>
                                 <td className="px-5 py-3"><span className="font-mono text-xs text-foreground bg-secondary px-2 py-0.5 rounded">{formatDisplayDate(String(member.paidUntil))}</span></td>
                                 <td className="px-5 py-3"><span className="font-semibold text-foreground text-sm">{formatCurrency(member.totalPaid)}</span></td>
                                 <td className="px-5 py-3"><span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${statusInfo.color}`}>{statusInfo.text}</span></td>
@@ -618,19 +632,19 @@ export default function SanduqApp() {
                 <div className="md:hidden divide-y divide-border">
                   {filteredMembers.length === 0 && <div className="text-center py-10 text-muted-foreground text-xs">لا يوجد أعضاء</div>}
                   {viewMode === 'families' ? groupedMembers.map((group, gi) => (
-                    <div key={gi}>
+                    <div key={gi} style={{ borderRight: group.members.length > 1 ? `3px solid ${group.color.text}` : undefined }}>
                       {group.members.length > 1 && group.head && (
-                        <div className="px-3.5 py-2 bg-primary/5 border-b border-border"><span className="text-[11px] font-bold text-primary flex items-center gap-1.5"><Users size={12} /> بيت {group.head.name} ({group.members.length})</span></div>
+                        <div className="px-3.5 py-2 border-b border-border" style={{ backgroundColor: group.color.headerBg }}><span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}><Users size={12} /> بيت {group.head.name} ({group.members.length})</span></div>
                       )}
                       {group.members.map(member => {
                         const statusInfo = getMemberStatus(member.paidUntil);
                         const isDependent = !!member.headMemberId;
                         return (
-                          <div key={member.id} onClick={() => setViewMemberHistory(member)} className={`p-3.5 hover:bg-accent/30 transition cursor-pointer active:bg-accent/50 ${statusInfo.status === 'late' ? 'animate-pulse-red-glow' : ''} ${isDependent ? 'pr-8' : ''}`}>
+                          <div key={member.id} onClick={() => setViewMemberHistory(member)} style={{ backgroundColor: group.members.length > 1 ? group.color.bg : undefined }} className={`p-3.5 hover:bg-accent/30 transition cursor-pointer active:bg-accent/50 ${statusInfo.status === 'late' ? 'animate-pulse-red-glow' : ''} ${isDependent ? 'pr-8' : ''}`}>
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 {isDependent && <span className="text-muted-foreground/40 text-xs shrink-0">└</span>}
-                                {member.profileImage ? <img src={member.profileImage} className="w-9 h-9 rounded-md object-cover shrink-0" /> : <div className="w-9 h-9 rounded-md bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs shrink-0">{member.name.charAt(0)}</div>}
+                                {member.profileImage ? <img src={member.profileImage} className="w-9 h-9 rounded-md object-cover shrink-0" /> : <div className="w-9 h-9 rounded-md flex items-center justify-center font-semibold text-xs shrink-0" style={{ backgroundColor: `${group.color.text}20`, color: group.color.text }}>{member.name.charAt(0)}</div>}
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-1.5">
                                     <span className="font-medium text-foreground text-sm truncate">{member.name}</span>
