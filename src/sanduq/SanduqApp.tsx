@@ -551,6 +551,7 @@ export default function SanduqApp() {
                     <h2 className="text-sm sm:text-base font-semibold text-foreground">قائمة الأعضاء <span className="text-muted-foreground font-normal">({filteredMembers.length})</span></h2>
                     {canEdit && (
                       <div className="flex gap-1">
+                        <button onClick={() => setIsFamilyAssignOpen(true)} className="h-8 px-2.5 bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition flex items-center gap-1 text-xs font-medium"><Users size={13} /><span className="hidden sm:inline"> عائلات</span></button>
                         <button onClick={() => setIsRemindersModalOpen(true)} className="h-8 px-2.5 bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))] rounded-md hover:bg-[hsl(var(--warning))]/20 transition flex items-center gap-1 text-xs font-medium"><Bell size={13} /><span className="hidden sm:inline"> تذكير</span></button>
                         <button onClick={handleExportMembersPDF} className="h-8 w-8 bg-destructive/5 text-destructive rounded-md hover:bg-destructive/10 transition flex items-center justify-center"><Printer size={14} /></button>
                         <button onClick={handleExportMembers} className="h-8 w-8 bg-[hsl(var(--success))]/5 text-[hsl(var(--success))] rounded-md hover:bg-[hsl(var(--success))]/10 transition hidden sm:flex items-center justify-center"><FileSpreadsheet size={14} /></button>
