@@ -6,7 +6,7 @@ interface FamilyAssignmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   members: Member[];
-  onAssign: (headId: string, dependentIds: string[]) => void;
+  onAssign: (headId: string, dependentIds: string[], familyName?: string) => void;
 }
 
 const getFirstName = (name: string): string => {
@@ -41,6 +41,7 @@ export const FamilyAssignmentModal: React.FC<FamilyAssignmentModalProps> = ({ is
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [searchHead, setSearchHead] = useState('');
   const [searchMember, setSearchMember] = useState('');
+  const [customFamilyName, setCustomFamilyName] = useState('');
 
   const potentialHeads = useMemo(() =>
     members.filter(m => !m.headMemberId).filter(m =>
@@ -109,11 +110,12 @@ export const FamilyAssignmentModal: React.FC<FamilyAssignmentModalProps> = ({ is
 
   const handleSave = () => {
     if (!selectedHeadId) return;
-    onAssign(selectedHeadId, Array.from(checkedIds));
+    onAssign(selectedHeadId, Array.from(checkedIds), customFamilyName.trim() || undefined);
     setSelectedHeadId('');
     setCheckedIds(new Set());
     setSearchHead('');
     setSearchMember('');
+    setCustomFamilyName('');
   };
 
   if (!isOpen) return null;
@@ -165,12 +167,28 @@ export const FamilyAssignmentModal: React.FC<FamilyAssignmentModalProps> = ({ is
             )}
           </div>
 
-          {/* Step 2: Select members */}
           {selectedHeadId && (
             <div className="animate-fade-in">
               <label className="text-sm font-bold text-foreground mb-2 block flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</span>
-                اختر أعضاء العائلة
+                اسم العائلة (اختياري)
+              </label>
+              <input
+                type="text"
+                placeholder={`بيت ${selectedHead?.name || ''}`}
+                value={customFamilyName}
+                onChange={e => setCustomFamilyName(e.target.value)}
+                className="w-full h-9 px-3 text-sm border border-border rounded-lg bg-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          )}
+
+          {/* Step 3: Select members */}
+          {selectedHeadId && (
+            <div className="animate-fade-in">
+              <label className="text-sm font-bold text-foreground mb-2 block flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">3</span>
+                اختر أعضاء العائلة (اختياري)
               </label>
 
               {/* Search + select all/none */}

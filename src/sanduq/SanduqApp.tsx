@@ -330,7 +330,7 @@ export default function SanduqApp() {
     });
   };
 
-  const handleFamilyAssign = async (headId: string, dependentIds: string[]) => {
+  const handleFamilyAssign = async (headId: string, dependentIds: string[], familyName?: string) => {
     await withSaving(async () => {
       // Clear old dependents of this head
       const oldDeps = members.filter(m => m.headMemberId === headId);
@@ -348,11 +348,17 @@ export default function SanduqApp() {
           await db.upsertMember(updated);
         }
       }
+      // Save custom family name if provided
+      if (familyName) {
+        const updated = { ...familyNames, [headId]: familyName };
+        setFamilyNames(updated);
+        localStorage.setItem('sanduq_family_names', JSON.stringify(updated));
+      }
       // Refresh
       const fresh = await db.getMembers();
       setMembers(fresh);
       const head = members.find(m => m.id === headId);
-      await logAction('تعيين عائلة', `تعيين ${dependentIds.length} تابع لبيت ${head?.name}`);
+      await logAction('تعيين عائلة', `تعيين ${dependentIds.length} تابع لبيت ${familyName || head?.name}`);
     });
     setIsFamilyAssignOpen(false);
   };
