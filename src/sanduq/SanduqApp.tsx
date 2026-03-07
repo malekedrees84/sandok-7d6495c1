@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Users, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown } from 'lucide-react';
 import { Member, PaymentTransaction, Expense, MONTHLY_FEE, START_DATE, AuditLog, VisitorLog, Announcement } from './types';
 import { StatCard } from './components/StatCard';
@@ -21,12 +21,10 @@ import { formatCurrency, formatDisplayDate, getMemberStatus, parseMonthStr, form
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, addMonths } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { api } from './services/api';
+import { db } from './services/db';
 
 const STORAGE_KEYS = {
-  MEMBERS: 'sanduq_members_clean_v1', PAYMENTS: 'sanduq_payments_clean_v1', EXPENSES: 'sanduq_expenses_clean_v1',
-  AUDIT_LOGS: 'sanduq_audit_logs_v1', VISITOR_LOGS: 'sanduq_visitor_logs_v1', ANNOUNCEMENTS: 'sanduq_announcements_v1',
-  SESSION_ROLE: 'sanduq_user_role', PENDING_SYNC: 'sanduq_pending_sync',
+  SESSION_ROLE: 'sanduq_user_role',
   TICKER_DIRECTION: 'sanduq_ticker_direction', TICKER_SPEED: 'sanduq_ticker_speed'
 };
 
@@ -40,9 +38,7 @@ export default function SanduqApp() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [pendingSync, setPendingSync] = useState({ members: false, payments: false, expenses: false, auditLogs: false, visitorLogs: false, announcements: false });
   const [showSplash, setShowSplash] = useState(true);
-  const initialLoadComplete = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'members' | 'expenses'>('dashboard');
   const [tickerDirection, setTickerDirection] = useState<'rtl' | 'ltr'>('ltr');
@@ -85,12 +81,14 @@ export default function SanduqApp() {
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
 
-  // Load settings
+  // Load settings from localStorage (only UI prefs)
   useEffect(() => {
     const savedDir = localStorage.getItem(STORAGE_KEYS.TICKER_DIRECTION);
     if (savedDir === 'rtl') setTickerDirection('rtl');
     const savedSpeed = localStorage.getItem(STORAGE_KEYS.TICKER_SPEED);
     if (savedSpeed) setTickerDuration(Number(savedSpeed));
+    const savedRole = localStorage.getItem(STORAGE_KEYS.SESSION_ROLE);
+    if (savedRole === 'admin' || savedRole === 'moderator') setUserRole(savedRole as any);
   }, []);
 
   const handleSaveTickerSettings = (dir: 'rtl' | 'ltr', duration: number) => {
@@ -99,123 +97,198 @@ export default function SanduqApp() {
     localStorage.setItem(STORAGE_KEYS.TICKER_SPEED, duration.toString());
   };
 
-  // Session
-  useEffect(() => {
-    const savedRole = localStorage.getItem(STORAGE_KEYS.SESSION_ROLE);
-    if (savedRole === 'admin' || savedRole === 'moderator') setUserRole(savedRole as any);
-    else setUserRole(null);
-  }, []);
-
-  // Load Data
-  useEffect(() => {
+  // Load ALL data from Supabase
+  const loadAllData = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const l = (k: string) => { const v = localStorage.getItem(k); return v ? JSON.parse(v) : []; };
-      setMembers(l(STORAGE_KEYS.MEMBERS)); setPayments(l(STORAGE_KEYS.PAYMENTS)); setExpenses(l(STORAGE_KEYS.EXPENSES));
-      setAuditLogs(l(STORAGE_KEYS.AUDIT_LOGS)); setVisitorLogs(l(STORAGE_KEYS.VISITOR_LOGS)); setAnnouncements(l(STORAGE_KEYS.ANNOUNCEMENTS));
-      initialLoadComplete.current = true;
-    } catch (e) { console.error("Load error", e); }
+      const [m, p, e, al, vl, an] = await Promise.all([
+        db.getMembers(), db.getPayments(), db.getExpenses(),
+        db.getAuditLogs(), db.getVisitorLogs(), db.getAnnouncements(),
+      ]);
+      setMembers(m); setPayments(p); setExpenses(e);
+      setAuditLogs(al); setVisitorLogs(vl); setAnnouncements(an);
+    } catch (err) { console.error('Load error:', err); }
     setIsLoading(false);
   }, []);
 
-  const createUpdater = (key: string, stateSetter: React.Dispatch<React.SetStateAction<any>>) => {
-    return (val: any) => {
-      stateSetter((prev: any) => {
-        const newData = typeof val === 'function' ? val(prev) : val;
-        localStorage.setItem(key, JSON.stringify(newData));
-        return newData;
-      });
-    };
+  useEffect(() => { loadAllData(); }, [loadAllData]);
+
+  // Helper: run async DB op with saving indicator
+  const withSaving = async (fn: () => Promise<void>) => {
+    setIsSaving(true);
+    try { await fn(); } catch (e) { console.error(e); }
+    setIsSaving(false);
   };
 
-  const updateMembers = createUpdater(STORAGE_KEYS.MEMBERS, setMembers);
-  const updatePayments = createUpdater(STORAGE_KEYS.PAYMENTS, setPayments);
-  const updateExpenses = createUpdater(STORAGE_KEYS.EXPENSES, setExpenses);
-  const updateAuditLogs = createUpdater(STORAGE_KEYS.AUDIT_LOGS, setAuditLogs);
-  const updateVisitorLogs = createUpdater(STORAGE_KEYS.VISITOR_LOGS, setVisitorLogs);
-  const updateAnnouncements = createUpdater(STORAGE_KEYS.ANNOUNCEMENTS, setAnnouncements);
-
-  const logAction = (action: string, details: string) => {
+  const logAction = async (action: string, details: string) => {
     const user = userRole === 'admin' ? 'Admin' : (userRole === 'moderator' ? 'Edrees' : 'System');
-    updateAuditLogs((prev: AuditLog[]) => [{ id: Date.now().toString(), user, action, details, timestamp: new Date().toISOString() }, ...prev]);
+    const log: AuditLog = { id: Date.now().toString(), user, action, details, timestamp: new Date().toISOString() };
+    setAuditLogs(prev => [log, ...prev]);
+    await db.insertAuditLog(log);
   };
 
   const handleUserLogin = (role: 'admin' | 'moderator') => { setUserRole(role); localStorage.setItem(STORAGE_KEYS.SESSION_ROLE, role); setIsLoginModalOpen(false); };
   const handleUserLogout = () => { if (window.confirm("هل أنت متأكد من تسجيل الخروج؟")) { setUserRole(null); localStorage.removeItem(STORAGE_KEYS.SESSION_ROLE); setIsAddMemberMode(false); } };
 
-  const handleConfirmPayment = (amount: number, newPaidUntil: string) => {
+  const handleConfirmPayment = async (amount: number, newPaidUntil: string) => {
     if (!selectedMember) return;
-    const monthsCovered = Math.floor(amount / MONTHLY_FEE);
-    updatePayments((prev: PaymentTransaction[]) => [{ id: Date.now().toString(), memberId: selectedMember.id, amount, date: new Date().toISOString().slice(0, 10), monthsCovered, previousPaidUntil: selectedMember.paidUntil, newPaidUntil }, ...prev]);
-    updateMembers((prev: Member[]) => prev.map(m => m.id === selectedMember.id ? { ...m, paidUntil: newPaidUntil, totalPaid: m.totalPaid + amount } : m));
-    logAction('إضافة دفعة', `استلام ${amount} من ${selectedMember.name}`);
+    await withSaving(async () => {
+      const monthsCovered = Math.floor(amount / MONTHLY_FEE);
+      const tx: PaymentTransaction = { id: Date.now().toString(), memberId: selectedMember.id, amount, date: new Date().toISOString().slice(0, 10), monthsCovered, previousPaidUntil: selectedMember.paidUntil, newPaidUntil };
+      const updatedMember = { ...selectedMember, paidUntil: newPaidUntil, totalPaid: selectedMember.totalPaid + amount };
+      
+      await Promise.all([db.insertPayment(tx), db.upsertMember(updatedMember)]);
+      setPayments(prev => [tx, ...prev]);
+      setMembers(prev => prev.map(m => m.id === selectedMember.id ? updatedMember : m));
+      await logAction('إضافة دفعة', `استلام ${amount} من ${selectedMember.name}`);
+    });
     setIsPaymentModalOpen(false); setSelectedMember(null);
   };
 
-  const handleAddMember = (e: React.FormEvent) => {
+  const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newMemberName.trim()) {
+    if (!newMemberName.trim()) return;
+    await withSaving(async () => {
       const newMember: Member = { id: Date.now().toString(), name: newMemberName.trim(), phone: '', joinDate: newMemberJoinDate, paidUntil: formatMonthStr(addMonths(parseMonthStr(newMemberJoinDate), -1)), totalPaid: 0, status: 'active', profileImage: newMemberImage };
-      updateMembers((prev: Member[]) => [...prev, newMember]);
-      logAction('إضافة عضو', `إضافة العضو الجديد: ${newMemberName}`);
-      setIsAddMemberMode(false); setNewMemberName(''); setNewMemberImage(undefined);
-    }
+      await db.upsertMember(newMember);
+      setMembers(prev => [...prev, newMember]);
+      await logAction('إضافة عضو', `إضافة العضو الجديد: ${newMemberName}`);
+    });
+    setIsAddMemberMode(false); setNewMemberName(''); setNewMemberImage(undefined);
   };
 
-  const handleUpdateMember = (updatedInfo: Member) => {
-    updateMembers((prev: Member[]) => prev.map(m => {
-      if (m.id !== updatedInfo.id) return m;
+  const handleUpdateMember = async (updatedInfo: Member) => {
+    await withSaving(async () => {
+      const existing = members.find(m => m.id === updatedInfo.id);
+      if (!existing) return;
       let startDate = parseMonthStr(START_DATE);
       const joinObj = new Date(updatedInfo.joinDate);
       if (!isNaN(joinObj.getTime())) { const jms = new Date(joinObj.getFullYear(), joinObj.getMonth(), 1); if (jms > startDate) startDate = jms; }
-      const monthsPaid = Math.floor(m.totalPaid / MONTHLY_FEE);
-      return { ...m, ...updatedInfo, paidUntil: formatMonthStr(addMonths(startDate, monthsPaid - 1)) };
-    }));
-    logAction('تعديل عضو', `تحديث بيانات: ${updatedInfo.name}`);
+      const monthsPaid = Math.floor(existing.totalPaid / MONTHLY_FEE);
+      const updated = { ...existing, ...updatedInfo, paidUntil: formatMonthStr(addMonths(startDate, monthsPaid - 1)) };
+      await db.upsertMember(updated);
+      setMembers(prev => prev.map(m => m.id === updated.id ? updated : m));
+      await logAction('تعديل عضو', `تحديث بيانات: ${updatedInfo.name}`);
+    });
     setIsEditMemberModalOpen(false); setEditingMember(null);
   };
 
-  const handleDeleteTransaction = (transactionId: string) => {
+  const handleDeleteTransaction = async (transactionId: string) => {
     if (!isAdmin) { alert("عذراً، هذه الصلاحية خاصة بالمشرف العام فقط."); return; }
     const transaction = payments.find(p => p.id === transactionId);
     if (!transaction || !window.confirm('هل أنت متأكد من حذف حركة الدفع؟')) return;
-    updatePayments((prev: PaymentTransaction[]) => prev.filter(p => p.id !== transactionId));
-    updateMembers((prev: Member[]) => prev.map(m => {
-      if (m.id !== transaction.memberId) return m;
-      const newTotalPaid = m.totalPaid - transaction.amount;
-      let startDate = parseMonthStr(START_DATE);
-      if (m.joinDate) { const jo = new Date(m.joinDate); if (!isNaN(jo.getTime())) { const jms = new Date(jo.getFullYear(), jo.getMonth(), 1); if (jms > startDate) startDate = jms; } }
-      return { ...m, totalPaid: newTotalPaid, paidUntil: formatMonthStr(addMonths(startDate, Math.floor(newTotalPaid / MONTHLY_FEE) - 1)) };
-    }));
-    logAction('حذف دفعة', `حذف دفعة بقيمة ${transaction.amount}`);
+    await withSaving(async () => {
+      await db.deletePayment(transactionId);
+      setPayments(prev => prev.filter(p => p.id !== transactionId));
+      const member = members.find(m => m.id === transaction.memberId);
+      if (member) {
+        const newTotalPaid = member.totalPaid - transaction.amount;
+        let startDate = parseMonthStr(START_DATE);
+        if (member.joinDate) { const jo = new Date(member.joinDate); if (!isNaN(jo.getTime())) { const jms = new Date(jo.getFullYear(), jo.getMonth(), 1); if (jms > startDate) startDate = jms; } }
+        const updated = { ...member, totalPaid: newTotalPaid, paidUntil: formatMonthStr(addMonths(startDate, Math.floor(newTotalPaid / MONTHLY_FEE) - 1)) };
+        await db.upsertMember(updated);
+        setMembers(prev => prev.map(m => m.id === updated.id ? updated : m));
+      }
+      await logAction('حذف دفعة', `حذف دفعة بقيمة ${transaction.amount}`);
+    });
   };
 
-  const handleAddExpense = (expense: Omit<Expense, 'id'>) => { updateExpenses((prev: Expense[]) => [{ ...expense, id: Date.now().toString() }, ...prev]); logAction('إضافة مصروف', `صرف ${expense.amount} - ${expense.title}`); };
-  const handleDeleteExpense = (id: string) => { if (!isAdmin) return; const exp = expenses.find(e => e.id === id); if (window.confirm('حذف المصروف؟')) { updateExpenses((prev: Expense[]) => prev.filter(e => e.id !== id)); logAction('حذف مصروف', `حذف مصروف: ${exp?.title}`); } };
-  const handlePublicCheck = (phone: string) => { updateVisitorLogs((prev: VisitorLog[]) => [{ phone, timestamp: new Date().toISOString() }, ...prev]); };
+  const handleAddExpense = async (expense: Omit<Expense, 'id'>) => {
+    await withSaving(async () => {
+      const full = { ...expense, id: Date.now().toString() };
+      await db.insertExpense(full);
+      setExpenses(prev => [full, ...prev]);
+      await logAction('إضافة مصروف', `صرف ${expense.amount} - ${expense.title}`);
+    });
+  };
 
-  const handleRecalculateStatus = () => {
-    updateMembers((prev: Member[]) => prev.map(m => {
-      let startDate = parseMonthStr(START_DATE);
-      if (m.joinDate) { const jo = new Date(m.joinDate); if (!isNaN(jo.getTime())) { const jms = new Date(jo.getFullYear(), jo.getMonth(), 1); if (jms > startDate) startDate = jms; } }
-      return { ...m, paidUntil: formatMonthStr(addMonths(startDate, Math.floor(m.totalPaid / MONTHLY_FEE) - 1)) };
-    }));
+  const handleDeleteExpense = async (id: string) => {
+    if (!isAdmin) return;
+    const exp = expenses.find(e => e.id === id);
+    if (!window.confirm('حذف المصروف؟')) return;
+    await withSaving(async () => {
+      await db.deleteExpense(id);
+      setExpenses(prev => prev.filter(e => e.id !== id));
+      await logAction('حذف مصروف', `حذف مصروف: ${exp?.title}`);
+    });
+  };
+
+  const handlePublicCheck = async (phone: string) => {
+    const log: VisitorLog = { phone, timestamp: new Date().toISOString() };
+    setVisitorLogs(prev => [log, ...prev]);
+    await db.insertVisitorLog(log);
+  };
+
+  const handleRecalculateStatus = async () => {
+    await withSaving(async () => {
+      const updated = members.map(m => {
+        let startDate = parseMonthStr(START_DATE);
+        if (m.joinDate) { const jo = new Date(m.joinDate); if (!isNaN(jo.getTime())) { const jms = new Date(jo.getFullYear(), jo.getMonth(), 1); if (jms > startDate) startDate = jms; } }
+        return { ...m, paidUntil: formatMonthStr(addMonths(startDate, Math.floor(m.totalPaid / MONTHLY_FEE) - 1)) };
+      });
+      await Promise.all(updated.map(m => db.upsertMember(m)));
+      setMembers(updated);
+    });
     alert("تم تحديث البيانات.");
   };
 
-  const handleMarkReminderSent = (memberId: string) => { updateMembers((prev: Member[]) => prev.map(m => m.id === memberId ? { ...m, lastReminderDate: new Date().toISOString() } : m)); };
-
-  const handleAddAnnouncement = (text: string, image?: string) => { updateAnnouncements((prev: Announcement[]) => [{ id: Date.now().toString(), text, image, createdAt: new Date().toISOString(), active: true }, ...prev]); };
-  const handleDeleteAnnouncement = (id: string) => { updateAnnouncements((prev: Announcement[]) => prev.filter(a => a.id !== id)); };
-
-  const handleBatchPayment = (updates: { memberId: string, amount: number, newPaidUntil: string }[]) => {
-    const newTx: PaymentTransaction[] = updates.map(u => { const m = members.find(mem => mem.id === u.memberId); return { id: Date.now().toString() + Math.random().toString().slice(2, 5), memberId: u.memberId, amount: u.amount, date: new Date().toISOString().slice(0, 10), monthsCovered: Math.floor(u.amount / MONTHLY_FEE), previousPaidUntil: m?.paidUntil || '', newPaidUntil: u.newPaidUntil }; });
-    updatePayments((prev: PaymentTransaction[]) => [...newTx, ...prev]);
-    updateMembers((prev: Member[]) => prev.map(m => { const u = updates.find(x => x.memberId === m.id); return u ? { ...m, paidUntil: u.newPaidUntil, totalPaid: m.totalPaid + u.amount } : m; }));
-    logAction('دفعات مجمعة', `تم تسجيل ${updates.length} دفعة جديدة`);
+  const handleMarkReminderSent = async (memberId: string) => {
+    const member = members.find(m => m.id === memberId);
+    if (!member) return;
+    const updated = { ...member, lastReminderDate: new Date().toISOString() };
+    await db.upsertMember(updated);
+    setMembers(prev => prev.map(m => m.id === memberId ? updated : m));
   };
 
-  const handleDeleteMember = (id: string) => { const m = members.find(x => x.id === id); updateMembers((prev: Member[]) => prev.filter(m => m.id !== id)); logAction('حذف عضو', `تم حذف العضو: ${m?.name}`); };
-  const handleDeleteAllData = () => { updateMembers([]); updatePayments([]); updateExpenses([]); updateAuditLogs([]); updateVisitorLogs([]); updateAnnouncements([]); };
+  const handleAddAnnouncement = async (text: string, image?: string) => {
+    const a: Announcement = { id: Date.now().toString(), text, image, createdAt: new Date().toISOString(), active: true };
+    await db.insertAnnouncement(a);
+    setAnnouncements(prev => [a, ...prev]);
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    await db.deleteAnnouncement(id);
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
+  };
+
+  const handleBatchPayment = async (updates: { memberId: string, amount: number, newPaidUntil: string }[]) => {
+    await withSaving(async () => {
+      const newTxs: PaymentTransaction[] = updates.map(u => {
+        const m = members.find(mem => mem.id === u.memberId);
+        return { id: Date.now().toString() + Math.random().toString().slice(2, 5), memberId: u.memberId, amount: u.amount, date: new Date().toISOString().slice(0, 10), monthsCovered: Math.floor(u.amount / MONTHLY_FEE), previousPaidUntil: m?.paidUntil || '', newPaidUntil: u.newPaidUntil };
+      });
+      await Promise.all(newTxs.map(tx => db.insertPayment(tx)));
+      setPayments(prev => [...newTxs, ...prev]);
+
+      const updatedMembers = members.map(m => {
+        const u = updates.find(x => x.memberId === m.id);
+        return u ? { ...m, paidUntil: u.newPaidUntil, totalPaid: m.totalPaid + u.amount } : m;
+      });
+      await Promise.all(updatedMembers.filter(m => updates.some(u => u.memberId === m.id)).map(m => db.upsertMember(m)));
+      setMembers(updatedMembers);
+      await logAction('دفعات مجمعة', `تم تسجيل ${updates.length} دفعة جديدة`);
+    });
+  };
+
+  const handleDeleteMember = async (id: string) => {
+    const m = members.find(x => x.id === id);
+    await withSaving(async () => {
+      await db.deleteMember(id);
+      setMembers(prev => prev.filter(m => m.id !== id));
+      await logAction('حذف عضو', `تم حذف العضو: ${m?.name}`);
+    });
+  };
+
+  const handleDeleteAllData = async () => {
+    await withSaving(async () => {
+      await Promise.all([
+        db.deleteAllPayments(), db.deleteAllExpenses(), db.deleteAllAuditLogs(),
+        db.deleteAllVisitorLogs(), db.deleteAllAnnouncements(), db.deleteAllMembers(),
+      ]);
+      setMembers([]); setPayments([]); setExpenses([]);
+      setAuditLogs([]); setVisitorLogs([]); setAnnouncements([]);
+    });
+  };
 
   const handleExportMembersPDF = () => {
     const headers = ["الاسم", "تاريخ الانضمام", "مدفوع لغاية", "المجموع", "الحالة"];
@@ -263,7 +336,7 @@ export default function SanduqApp() {
 
   return (
     <div className="min-h-screen font-sans text-foreground pb-20 sm:pb-6 relative transition-colors duration-200 bg-background">
-      {/* HEADER - Fluent Mica style */}
+      {/* HEADER */}
       <header className="fluent-acrylic border-b border-border sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-12 sm:h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -274,7 +347,7 @@ export default function SanduqApp() {
               <h1 className="text-sm sm:text-base font-semibold text-foreground leading-none truncate">صندوق العائلة</h1>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className={`inline-flex rounded-full h-1.5 w-1.5 ${isSaving ? 'bg-[hsl(var(--warning))]' : isOnline ? 'bg-[hsl(var(--success))]' : 'bg-destructive'}`} />
-                <p className="text-[10px] text-muted-foreground">{isSaving ? 'مزامنة...' : isOnline ? 'متصل' : 'غير متصل'}</p>
+                <p className="text-[10px] text-muted-foreground">{isSaving ? 'حفظ...' : isOnline ? 'متصل' : 'غير متصل'}</p>
               </div>
             </div>
           </div>
@@ -299,7 +372,6 @@ export default function SanduqApp() {
             )}
           </div>
         </div>
-        {/* Mobile dropdown */}
         {mobileMenuOpen && isAdmin && (
           <div className="sm:hidden border-t border-border px-3 py-2 space-y-0.5 animate-fade-in bg-card">
             <button onClick={() => { setMobileMenuOpen(false); if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition"><Share2 size={15} /> مشاركة</button>
@@ -310,7 +382,7 @@ export default function SanduqApp() {
       </header>
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 space-y-3 sm:space-y-5">
-        {/* TABS - Windows 11 Pivot style */}
+        {/* TABS */}
         <div className="flex gap-0.5 bg-secondary/60 p-0.5 rounded-lg w-full">
           {(['dashboard', 'members', 'expenses'] as const).map(t => (
             <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-150 ${activeTab === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-card/50'}`}>
@@ -320,20 +392,19 @@ export default function SanduqApp() {
           ))}
         </div>
 
+        {/* Loading */}
+        {isLoading && <div className="text-center py-20 text-muted-foreground text-sm">جاري تحميل البيانات...</div>}
+
         {/* DASHBOARD */}
-        {activeTab === 'dashboard' && (
+        {!isLoading && activeTab === 'dashboard' && (
           <div className="space-y-3 sm:space-y-5 animate-fluent-reveal">
             <NewsTicker announcements={announcements} canEdit={canEdit} onEdit={() => setIsNewsModalOpen(true)} direction={tickerDirection} duration={tickerDuration} />
-            
-            {/* Stat cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
               <StatCard title="الرصيد" value={formatCurrency(netBalance)} icon={<span className="text-lg sm:text-xl font-bold">₪</span>} trend="متوفر" />
               <StatCard title="التحصيلات" value={formatCurrency(totalIncome)} icon={<TrendingUp size={18} />} />
               <StatCard title="المصروفات" value={formatCurrency(totalExpenses_val)} icon={<TrendingDown size={18} />} />
               <StatCard title="الزوار" value={visitorLogs.length.toString()} icon={<Eye size={18} />} />
             </div>
-            
-            {/* Chart + Quick actions */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
               <div className="lg:col-span-2 fluent-card p-4 sm:p-5">
                 <div className="flex justify-between items-center mb-4">
@@ -387,11 +458,10 @@ export default function SanduqApp() {
         )}
 
         {/* MEMBERS */}
-        {activeTab === 'members' && (
+        {!isLoading && activeTab === 'members' && (
           <div className="space-y-3 sm:space-y-4 animate-fluent-reveal">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="lg:col-span-3 fluent-card overflow-hidden">
-                {/* Header */}
                 <div className="p-4 sm:p-5 border-b border-border space-y-3">
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm sm:text-base font-semibold text-foreground">قائمة الأعضاء <span className="text-muted-foreground font-normal">({filteredMembers.length})</span></h2>
@@ -487,7 +557,7 @@ export default function SanduqApp() {
         )}
 
         {/* EXPENSES */}
-        {activeTab === 'expenses' && (
+        {!isLoading && activeTab === 'expenses' && (
           <div className="space-y-3 sm:space-y-4 animate-fluent-reveal">
             <div className="fluent-card overflow-hidden">
               <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between gap-2">
@@ -495,7 +565,6 @@ export default function SanduqApp() {
                 {canEdit && <button onClick={() => setIsExpenseModalOpen(true)} className="h-8 px-3 bg-destructive text-destructive-foreground rounded-md font-medium hover:bg-destructive/90 transition flex items-center gap-1.5 text-xs"><Plus size={14} /> مصروف</button>}
               </div>
 
-              {/* Desktop table */}
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-right">
                   <thead className="bg-secondary/50 text-muted-foreground text-xs font-medium"><tr><th className="px-5 py-3">البند</th><th className="px-5 py-3">التصنيف</th><th className="px-5 py-3">التاريخ</th><th className="px-5 py-3">القيمة</th><th className="px-5 py-3">ملاحظات</th>{isAdmin && <th className="px-5 py-3"></th>}</tr></thead>
@@ -507,7 +576,6 @@ export default function SanduqApp() {
                 </table>
               </div>
 
-              {/* Mobile card list */}
               <div className="sm:hidden divide-y divide-border">
                 {expenses.length === 0 && <div className="text-center py-10 text-muted-foreground text-xs">لا توجد مصروفات</div>}
                 {expenses.map(expense => (
@@ -534,7 +602,7 @@ export default function SanduqApp() {
 
       <footer className="max-w-7xl mx-auto px-4 py-4 text-center"><p className="text-[10px] text-muted-foreground/60">تم إنشاء هذا البرنامج بواسطة مالك إدريس</p></footer>
 
-      {/* FAB - Fluent style */}
+      {/* FAB */}
       <button onClick={() => setIsAIChatOpen(true)} className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 bg-primary hover:bg-primary/90 text-primary-foreground p-3 rounded-xl shadow-lg transition hover:shadow-xl hover:scale-105 active:scale-95">
         <Sparkles size={18} />
       </button>
@@ -544,12 +612,12 @@ export default function SanduqApp() {
       <AuditLogsModal isOpen={isAuditLogsOpen} onClose={() => setIsAuditLogsOpen(false)} logs={auditLogs} />
       <ManageNewsModal isOpen={isNewsModalOpen} onClose={() => setIsNewsModalOpen(false)} announcements={announcements} onAdd={handleAddAnnouncement} onDelete={handleDeleteAnnouncement} currentDirection={tickerDirection} currentDuration={tickerDuration} onSaveSettings={handleSaveTickerSettings} />
       <AIChatModal isOpen={isAIChatOpen} onClose={() => setIsAIChatOpen(false)} members={members} expenses={expenses}
-        onApplyUpdates={(updates) => { handleBatchPayment(updates); logAction('تحديث ذكي', 'تم تنفيذ تحديثات عبر المساعد الذكي'); }}
+        onApplyUpdates={(updates) => { handleBatchPayment(updates); }}
         onAddExpense={handleAddExpense} onDeleteExpense={handleDeleteExpense}
-        onEditExpense={(e) => { updateExpenses((prev: Expense[]) => prev.map(ex => ex.id === e.id ? e : ex)); }}
+        onEditExpense={async (e) => { await db.updateExpense(e); setExpenses(prev => prev.map(ex => ex.id === e.id ? e : ex)); }}
         onDeleteAllData={handleDeleteAllData}
-        onAddMember={(n, p, j) => { updateMembers((prev: Member[]) => [...prev, { id: Date.now().toString(), name: n, phone: p, joinDate: j || START_DATE, paidUntil: formatMonthStr(addMonths(parseMonthStr(j || START_DATE), -1)), totalPaid: 0, status: 'active' }]); }}
-        onBatchAddMembers={(l) => { l.forEach(m => updateMembers((prev: Member[]) => [...prev, { id: Date.now().toString() + Math.random().toString().slice(2, 5), name: m.name, phone: m.phone, joinDate: m.joinDate || START_DATE, paidUntil: formatMonthStr(addMonths(parseMonthStr(m.joinDate || START_DATE), -1)), totalPaid: 0, status: 'active' }])); }}
+        onAddMember={async (n, p, j) => { const m: Member = { id: Date.now().toString(), name: n, phone: p, joinDate: j || START_DATE, paidUntil: formatMonthStr(addMonths(parseMonthStr(j || START_DATE), -1)), totalPaid: 0, status: 'active' }; await db.upsertMember(m); setMembers(prev => [...prev, m]); }}
+        onBatchAddMembers={async (l) => { for (const item of l) { const m: Member = { id: Date.now().toString() + Math.random().toString().slice(2, 5), name: item.name, phone: item.phone, joinDate: item.joinDate || START_DATE, paidUntil: formatMonthStr(addMonths(parseMonthStr(item.joinDate || START_DATE), -1)), totalPaid: 0, status: 'active' }; await db.upsertMember(m); setMembers(prev => [...prev, m]); } }}
         onDeleteMember={handleDeleteMember} onUpdateMember={handleUpdateMember} onBulkUpdateJoinDate={() => {}} isAdmin={isAdmin} userRole={userRole} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onRecalculate={handleRecalculateStatus} />
       <MonthlyReportModal isOpen={isMonthlyReportOpen} onClose={() => setIsMonthlyReportOpen(false)} members={members} isAdmin={canEdit} />
