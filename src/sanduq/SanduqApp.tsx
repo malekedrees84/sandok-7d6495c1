@@ -293,6 +293,22 @@ export default function SanduqApp() {
     });
   };
 
+  const handleAddTreasuryTx = async (tx: Omit<TreasuryTransaction, 'id'>) => {
+    const newTx: TreasuryTransaction = { ...tx, id: crypto.randomUUID() };
+    await withSaving(async () => {
+      await db.insertTreasuryTransaction(newTx);
+      setTreasuryTx(prev => [newTx, ...prev]);
+      await logAction('حركة خزينة', `${tx.type === 'deposit' ? 'إيداع' : 'سحب'} ${tx.amount} - ${tx.holder}`);
+    });
+  };
+
+  const handleDeleteTreasuryTx = async (id: string) => {
+    await withSaving(async () => {
+      await db.deleteTreasuryTransaction(id);
+      setTreasuryTx(prev => prev.filter(t => t.id !== id));
+    });
+  };
+
   const handleExportMembersPDF = () => {
     const headers = ["الاسم", "تاريخ الانضمام", "مدفوع لغاية", "المجموع", "الحالة"];
     const rows = members.map(m => { const s = getMemberStatus(m.paidUntil); return [m.name, m.joinDate || '-', formatDisplayDate(m.paidUntil), formatCurrency(m.totalPaid), s.text]; });
