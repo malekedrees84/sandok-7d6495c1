@@ -421,20 +421,41 @@ export default function SanduqApp() {
     { bg: 'hsl(350 80% 50% / 0.08)', border: 'hsl(350 80% 50% / 0.25)', text: 'hsl(350 80% 50%)', headerBg: 'hsl(350 80% 50% / 0.12)' },
   ];
 
-  // Group members by family: heads first, then their dependents
+  // Group members by family: families first, then ungrouped individuals at the bottom
   const groupedMembers = (() => {
     const heads = filteredMembers.filter(m => !m.headMemberId);
     const dependents = filteredMembers.filter(m => m.headMemberId);
-    const result: { head: Member | null; members: Member[]; color: typeof familyColors[0] }[] = [];
-    heads.forEach((h, i) => {
+    const familyGroups: { head: Member | null; members: Member[]; color: typeof familyColors[0] }[] = [];
+    const ungrouped: Member[] = [];
+    let colorIdx = 0;
+    
+    heads.forEach((h) => {
       const deps = dependents.filter(d => d.headMemberId === h.id);
-      result.push({ head: h, members: [h, ...deps], color: familyColors[i % familyColors.length] });
+      const savedNames = JSON.parse(localStorage.getItem('sanduq_family_names') || '{}');
+      const hasFamilyName = !!savedNames[h.id];
+      // If head has dependents or a custom family name, it's a family group
+      if (deps.length > 0 || hasFamilyName) {
+        familyGroups.push({ head: h, members: [h, ...deps], color: familyColors[colorIdx % familyColors.length] });
+        colorIdx++;
+      } else {
+        ungrouped.push(h);
+      }
     });
+    
     // Orphan dependents (head not in filtered list)
-    const usedDepIds = new Set(result.flatMap(g => g.members.map(m => m.id)));
+    const usedDepIds = new Set(familyGroups.flatMap(g => g.members.map(m => m.id)));
     const orphans = dependents.filter(d => !usedDepIds.has(d.id));
-    if (orphans.length > 0) result.push({ head: null, members: orphans, color: familyColors[result.length % familyColors.length] });
-    return result;
+    if (orphans.length > 0) {
+      familyGroups.push({ head: null, members: orphans, color: familyColors[colorIdx % familyColors.length] });
+      colorIdx++;
+    }
+    
+    // Add ungrouped members as a single group at the bottom
+    if (ungrouped.length > 0) {
+      familyGroups.push({ head: null, members: ungrouped, color: { bg: 'transparent', border: 'transparent', text: 'hsl(var(--muted-foreground))', headerBg: 'transparent' } });
+    }
+    
+    return familyGroups;
   })();
 
   const toggleFamily = (familyId: string) => {
@@ -629,6 +650,17 @@ export default function SanduqApp() {
                         const isCollapsed = collapsedFamilies.has(familyId);
                         return (
                         <React.Fragment key={gi}>
+                          {group.head === null && !group.members.some(m => m.headMemberId) && (
+                            <tr>
+                              <td colSpan={5} className="px-5 py-1.5 cursor-pointer select-none bg-secondary/30" onClick={() => toggleFamily(familyId)}>
+                                <span className="text-[11px] font-bold flex items-center gap-1.5 text-muted-foreground">
+                                  {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                                  <User size={12} />
+                                  أعضاء بدون عائلة ({group.members.length})
+                                </span>
+                              </td>
+                            </tr>
+                          )}
                           {group.members.length > 1 && group.head && (
                             <tr>
                               <td colSpan={5} className="px-5 py-1.5 cursor-pointer select-none" style={{ backgroundColor: group.color.headerBg }} onClick={() => toggleFamily(familyId)}>
@@ -643,6 +675,28 @@ export default function SanduqApp() {
                                     </span>
                                   ) : (
                                     <span>{getFamilyDisplayName(group.head)} ({group.members.length} أعضاء)</span>
+                                  )}
+                                  {canEdit && editingFamilyId !== familyId && (
+                                    <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 rounded hover:bg-background/30 transition mr-1 opacity-60 hover:opacity-100"><Pencil size={10} /></button>
+                                  )}
+                                </span>
+                              </td>
+                            </tr>
+                          )}
+                          {group.head && group.members.length === 1 && (
+                            <tr>
+                              <td colSpan={5} className="px-5 py-1.5 cursor-pointer select-none" style={{ backgroundColor: group.color.headerBg }} onClick={() => toggleFamily(familyId)}>
+                                <span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}>
+                                  {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                                  <Users size={12} />
+                                  {editingFamilyId === familyId ? (
+                                    <span className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                      <input autoFocus value={editingFamilyName} onChange={e => setEditingFamilyName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveFamilyName(familyId, editingFamilyName); if (e.key === 'Escape') setEditingFamilyId(null); }} className="h-5 px-1.5 text-[11px] font-bold rounded border border-current bg-background/80 outline-none w-32" style={{ color: group.color.text }} />
+                                      <button onClick={() => saveFamilyName(familyId, editingFamilyName)} className="p-0.5 rounded hover:bg-background/30"><Check size={11} /></button>
+                                      <button onClick={() => setEditingFamilyId(null)} className="p-0.5 rounded hover:bg-background/30"><XIcon size={11} /></button>
+                                    </span>
+                                  ) : (
+                                    <span>{getFamilyDisplayName(group.head)}</span>
                                   )}
                                   {canEdit && editingFamilyId !== familyId && (
                                     <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 rounded hover:bg-background/30 transition mr-1 opacity-60 hover:opacity-100"><Pencil size={10} /></button>
@@ -689,8 +743,17 @@ export default function SanduqApp() {
                     const familyId = group.head?.id || `orphan-${gi}`;
                     const isCollapsed = collapsedFamilies.has(familyId);
                     return (
-                    <div key={gi} style={{ borderRight: group.members.length > 1 ? `3px solid ${group.color.text}` : undefined }}>
-                      {group.members.length > 1 && group.head && (
+                    <div key={gi} style={{ borderRight: (group.members.length > 1 && group.head) ? `3px solid ${group.color.text}` : undefined }}>
+                      {group.head === null && !group.members.some(m => m.headMemberId) && (
+                        <div className="px-3.5 py-2 border-b border-border cursor-pointer select-none bg-secondary/30" onClick={() => toggleFamily(familyId)}>
+                          <span className="text-[11px] font-bold flex items-center gap-1.5 text-muted-foreground">
+                            {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                            <User size={12} />
+                            أعضاء بدون عائلة ({group.members.length})
+                          </span>
+                        </div>
+                      )}
+                      {group.head && (
                         <div className="px-3.5 py-2 border-b border-border cursor-pointer select-none" style={{ backgroundColor: group.color.headerBg }} onClick={() => toggleFamily(familyId)}>
                           <span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: group.color.text }}>
                             {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
@@ -702,7 +765,7 @@ export default function SanduqApp() {
                                 <button onClick={() => setEditingFamilyId(null)} className="p-0.5"><XIcon size={11} /></button>
                               </span>
                             ) : (
-                              <span>{getFamilyDisplayName(group.head)} ({group.members.length})</span>
+                              <span>{getFamilyDisplayName(group.head)} ({group.members.length}{group.members.length > 1 ? ' أعضاء' : ''})</span>
                             )}
                             {canEdit && editingFamilyId !== familyId && (
                               <button onClick={e => { e.stopPropagation(); setEditingFamilyId(familyId); setEditingFamilyName(familyNames[familyId] || `بيت ${group.head!.name}`); }} className="p-0.5 mr-1"><Pencil size={10} /></button>
