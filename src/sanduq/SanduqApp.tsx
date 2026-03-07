@@ -338,35 +338,35 @@ export default function SanduqApp() {
     <div className="min-h-screen font-sans text-foreground pb-20 sm:pb-6 relative transition-colors duration-200 bg-background">
       {/* HEADER */}
       <header className="fluent-acrylic border-b border-border sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-12 sm:h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shrink-0">
-              <Wallet size={16} />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow-md" style={{ background: 'var(--gradient-primary)' }}>
+              <Wallet size={17} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-semibold text-foreground leading-none truncate">صندوق العائلة</h1>
+              <h1 className="text-sm sm:text-base font-black text-foreground leading-none truncate">صندوق العائلة</h1>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className={`inline-flex rounded-full h-1.5 w-1.5 ${isSaving ? 'bg-[hsl(var(--warning))]' : isOnline ? 'bg-[hsl(var(--success))]' : 'bg-destructive'}`} />
-                <p className="text-[10px] text-muted-foreground">{isSaving ? 'حفظ...' : isOnline ? 'متصل' : 'غير متصل'}</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{isSaving ? 'حفظ...' : isOnline ? 'متصل' : 'غير متصل'}</p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-1.5">
-            <button onClick={() => setIsPublicInquiryOpen(true)} className="h-8 px-2 sm:px-3 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition flex items-center gap-1.5" title="افحص اشتراكك">
+            <button onClick={() => setIsPublicInquiryOpen(true)} className="h-8 px-2 sm:px-3 text-xs font-bold rounded-lg text-white hover:opacity-90 transition flex items-center gap-1.5 shadow-sm" style={{ background: 'var(--gradient-primary)' }} title="افحص اشتراكك">
               <UserCheck size={14} /><span className="hidden sm:inline">افحص حالتك</span>
             </button>
-            <button onClick={() => { if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition hidden sm:flex items-center justify-center"><Share2 size={15} /></button>
+            <button onClick={() => { if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition hidden sm:flex items-center justify-center"><Share2 size={15} /></button>
             {isAdmin && (
               <>
-                <button onClick={() => setIsAuditLogsOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition hidden sm:flex items-center justify-center"><ShieldCheck size={15} /></button>
-                <button onClick={() => setIsSettingsOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition hidden sm:flex items-center justify-center"><Settings size={15} /></button>
+                <button onClick={() => setIsAuditLogsOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition hidden sm:flex items-center justify-center"><ShieldCheck size={15} /></button>
+                <button onClick={() => setIsSettingsOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition hidden sm:flex items-center justify-center"><Settings size={15} /></button>
               </>
             )}
-            <button onClick={() => isLoggedIn ? handleUserLogout() : setIsLoginModalOpen(true)} className={`h-8 px-2.5 sm:px-3 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${isLoggedIn ? 'text-destructive bg-destructive/10 hover:bg-destructive/15' : 'text-muted-foreground bg-secondary hover:bg-accent'}`}>
+            <button onClick={() => isLoggedIn ? handleUserLogout() : setIsLoginModalOpen(true)} className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isLoggedIn ? 'text-destructive bg-destructive/10 hover:bg-destructive/15' : 'text-muted-foreground bg-secondary hover:bg-accent'}`}>
               {isLoggedIn ? <><Unlock size={13} /><span className="hidden xs:inline">خروج</span></> : <><Lock size={13} /><span className="hidden xs:inline">دخول</span></>}
             </button>
             {isAdmin && (
-              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition sm:hidden flex items-center justify-center">
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition sm:hidden flex items-center justify-center">
                 {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
               </button>
             )}
@@ -374,18 +374,18 @@ export default function SanduqApp() {
         </div>
         {mobileMenuOpen && isAdmin && (
           <div className="sm:hidden border-t border-border px-3 py-2 space-y-0.5 animate-fade-in bg-card">
-            <button onClick={() => { setMobileMenuOpen(false); if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition"><Share2 size={15} /> مشاركة</button>
-            <button onClick={() => { setMobileMenuOpen(false); setIsAuditLogsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition"><ShieldCheck size={15} /> سجل العمليات</button>
-            <button onClick={() => { setMobileMenuOpen(false); setIsSettingsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition"><Settings size={15} /> الإعدادات</button>
+            <button onClick={() => { setMobileMenuOpen(false); if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><Share2 size={15} /> مشاركة</button>
+            <button onClick={() => { setMobileMenuOpen(false); setIsAuditLogsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><ShieldCheck size={15} /> سجل العمليات</button>
+            <button onClick={() => { setMobileMenuOpen(false); setIsSettingsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><Settings size={15} /> الإعدادات</button>
           </div>
         )}
       </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 space-y-3 sm:space-y-5">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* TABS */}
-        <div className="flex gap-0.5 bg-secondary/60 p-0.5 rounded-lg w-full">
+        <div className="flex gap-1 bg-secondary/60 p-1 rounded-xl w-full">
           {(['dashboard', 'members', 'expenses'] as const).map(t => (
-            <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-150 ${activeTab === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-card/50'}`}>
+            <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 ${activeTab === t ? 'bg-card text-primary shadow-md' : 'text-muted-foreground hover:text-foreground hover:bg-card/50'}`}>
               {t === 'dashboard' ? <LayoutDashboard size={15} /> : t === 'members' ? <Users size={15} /> : <Receipt size={15} />}
               {t === 'dashboard' ? 'الرئيسية' : t === 'members' ? 'الأعضاء' : 'المصروفات'}
             </button>
