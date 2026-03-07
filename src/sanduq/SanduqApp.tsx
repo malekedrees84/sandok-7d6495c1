@@ -738,7 +738,8 @@ export default function SanduqApp() {
                         );
                       })}
                     </div>
-                  )) : filteredMembers.map(member => {
+                    );
+                  }) : filteredMembers.map(member => {
                     const statusInfo = getMemberStatus(member.paidUntil);
                     return (
                       <div key={member.id} onClick={() => setViewMemberHistory(member)} className={`p-3.5 hover:bg-accent/30 transition cursor-pointer active:bg-accent/50 ${statusInfo.status === 'late' ? 'animate-pulse-red-glow' : ''}`}>
