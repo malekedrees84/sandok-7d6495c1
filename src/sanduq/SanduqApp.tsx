@@ -631,6 +631,10 @@ export default function SanduqApp() {
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} onLogin={handleUserLogin} />
       <EditMemberModal isOpen={isEditMemberModalOpen} onClose={() => setIsEditMemberModalOpen(false)} member={editingMember} onUpdate={handleUpdateMember} />
       <RemindersModal isOpen={isRemindersModalOpen} onClose={() => setIsRemindersModalOpen(false)} members={members} onMarkAsSent={handleMarkReminderSent} />
+
+      <footer className="text-center py-4 text-[11px] text-muted-foreground border-t border-border mt-6">
+        جميع الحقوق محفوظة لدى المبرمج مالك ادريس
+      </footer>
     </div>
   );
 }
