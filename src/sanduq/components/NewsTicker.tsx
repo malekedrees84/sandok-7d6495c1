@@ -19,12 +19,12 @@ export const NewsTicker: React.FC<NewsTickerProps> = ({ announcements, canEdit, 
 
   return (
     <div className="relative w-full fluent-card overflow-hidden">
-      <div className="absolute top-0 right-0 bottom-0 z-20 bg-primary px-3 flex items-center rounded-r-lg">
-        <Megaphone size={16} className="text-primary-foreground" />
-        <span className="mr-2 font-semibold text-xs hidden sm:block text-primary-foreground">تنويهات</span>
+      <div className="absolute top-0 right-0 bottom-0 z-20 px-3 flex items-center rounded-r-xl" style={{ background: 'var(--gradient-primary)' }}>
+        <Megaphone size={16} className="text-white" />
+        <span className="mr-2 font-bold text-xs hidden sm:block text-white">تنويهات</span>
       </div>
       {canEdit && (
-        <button onClick={onEdit} className="absolute top-0 left-0 bottom-0 z-20 px-3 flex items-center transition text-muted-foreground hover:text-foreground hover:bg-accent rounded-l-lg" title="إدارة الرسائل">
+        <button onClick={onEdit} className="absolute top-0 left-0 bottom-0 z-20 px-3 flex items-center transition text-muted-foreground hover:text-foreground hover:bg-accent rounded-l-xl" title="إدارة الرسائل">
           <Edit size={14} />
         </button>
       )}
@@ -33,9 +33,9 @@ export const NewsTicker: React.FC<NewsTickerProps> = ({ announcements, canEdit, 
           <div className="animate-marquee whitespace-nowrap absolute top-1/2 flex items-center">
             {announcements.map((msg, index) => (
               <div key={msg.id} className="inline-flex items-center mx-8">
-                {msg.image && <img src={msg.image} alt="announcement" className="h-8 w-auto rounded border border-border shadow-sm ml-3 object-cover" />}
-                {msg.text && <span className="text-xs sm:text-sm font-medium text-foreground">{msg.text}</span>}
-                {index !== announcements.length - 1 && <span className="mx-6 text-muted-foreground text-xs opacity-40">|</span>}
+                {msg.image && <img src={msg.image} alt="announcement" className="h-8 w-auto rounded-lg border border-border shadow-sm ml-3 object-cover" />}
+                {msg.text && <span className="text-xs sm:text-sm font-semibold text-foreground">{msg.text}</span>}
+                {index !== announcements.length - 1 && <span className="mx-6 text-accent text-lg">✦</span>}
               </div>
             ))}
           </div>
