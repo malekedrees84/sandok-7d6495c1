@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Users, User, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown, Vault } from 'lucide-react';
+import { Users, User, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown, ChevronRight, Vault, Pencil, Check } from 'lucide-react';
 import { Member, PaymentTransaction, Expense, MONTHLY_FEE, START_DATE, AuditLog, VisitorLog, Announcement, TreasuryTransaction } from './types';
 import { StatCard } from './components/StatCard';
 import { PaymentModal } from './components/PaymentModal';
@@ -54,6 +54,12 @@ export default function SanduqApp() {
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'families' | 'members'>('families');
+  const [collapsedFamilies, setCollapsedFamilies] = useState<Set<string>>(new Set());
+  const [familyNames, setFamilyNames] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('sanduq_family_names') || '{}'); } catch { return {}; }
+  });
+  const [editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
+  const [editingFamilyName, setEditingFamilyName] = useState('');
 
   // Modals
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
