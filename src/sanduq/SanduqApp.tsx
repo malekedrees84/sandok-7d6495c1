@@ -133,7 +133,7 @@ export default function SanduqApp() {
   const handleUserLogin = (role: 'admin' | 'moderator') => { setUserRole(role); localStorage.setItem(STORAGE_KEYS.SESSION_ROLE, role); setIsLoginModalOpen(false); };
   const handleUserLogout = () => { if (window.confirm("هل أنت متأكد من تسجيل الخروج؟")) { setUserRole(null); localStorage.removeItem(STORAGE_KEYS.SESSION_ROLE); setIsAddMemberMode(false); } };
 
-  const handleConfirmPayment = async (amount: number, newPaidUntil: string) => {
+  const handleConfirmPayment = async (amount: number, newPaidUntil: string, treasuryHolder?: string) => {
     if (!selectedMember) return;
     await withSaving(async () => {
       const monthsCovered = Math.floor(amount / MONTHLY_FEE);
@@ -143,7 +143,17 @@ export default function SanduqApp() {
       await Promise.all([db.insertPayment(tx), db.upsertMember(updatedMember)]);
       setPayments(prev => [tx, ...prev]);
       setMembers(prev => prev.map(m => m.id === selectedMember.id ? updatedMember : m));
-      await logAction('إضافة دفعة', `استلام ${amount} من ${selectedMember.name}`);
+
+      if (treasuryHolder && amount > 0) {
+        const treasuryTxItem: TreasuryTransaction = {
+          id: crypto.randomUUID(), holder: treasuryHolder, type: 'deposit',
+          amount, description: `اشتراك ${selectedMember.name}`, date: new Date().toISOString().slice(0, 10),
+        };
+        await db.insertTreasuryTransaction(treasuryTxItem);
+        setTreasuryTx(prev => [treasuryTxItem, ...prev]);
+      }
+
+      await logAction('إضافة دفعة', `استلام ${amount} من ${selectedMember.name}${treasuryHolder ? ` → خزينة ${treasuryHolder}` : ''}`);
     });
     setIsPaymentModalOpen(false); setSelectedMember(null);
   };
