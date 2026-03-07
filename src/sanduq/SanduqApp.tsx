@@ -117,17 +117,22 @@ export default function SanduqApp() {
     setIsLoading(false);
   }, []);
 
-  const handleDataChange = (key: string, data: any, stateSetter: any) => {
-    stateSetter(data);
-    localStorage.setItem(key, JSON.stringify(data));
+  const createUpdater = (key: string, stateSetter: React.Dispatch<React.SetStateAction<any>>) => {
+    return (val: any) => {
+      stateSetter((prev: any) => {
+        const newData = typeof val === 'function' ? val(prev) : val;
+        localStorage.setItem(key, JSON.stringify(newData));
+        return newData;
+      });
+    };
   };
 
-  const updateMembers = (val: any) => handleDataChange(STORAGE_KEYS.MEMBERS, typeof val === 'function' ? val(members) : val, setMembers);
-  const updatePayments = (val: any) => handleDataChange(STORAGE_KEYS.PAYMENTS, typeof val === 'function' ? val(payments) : val, setPayments);
-  const updateExpenses = (val: any) => handleDataChange(STORAGE_KEYS.EXPENSES, typeof val === 'function' ? val(expenses) : val, setExpenses);
-  const updateAuditLogs = (val: any) => handleDataChange(STORAGE_KEYS.AUDIT_LOGS, typeof val === 'function' ? val(auditLogs) : val, setAuditLogs);
-  const updateVisitorLogs = (val: any) => handleDataChange(STORAGE_KEYS.VISITOR_LOGS, typeof val === 'function' ? val(visitorLogs) : val, setVisitorLogs);
-  const updateAnnouncements = (val: any) => handleDataChange(STORAGE_KEYS.ANNOUNCEMENTS, typeof val === 'function' ? val(announcements) : val, setAnnouncements);
+  const updateMembers = createUpdater(STORAGE_KEYS.MEMBERS, setMembers);
+  const updatePayments = createUpdater(STORAGE_KEYS.PAYMENTS, setPayments);
+  const updateExpenses = createUpdater(STORAGE_KEYS.EXPENSES, setExpenses);
+  const updateAuditLogs = createUpdater(STORAGE_KEYS.AUDIT_LOGS, setAuditLogs);
+  const updateVisitorLogs = createUpdater(STORAGE_KEYS.VISITOR_LOGS, setVisitorLogs);
+  const updateAnnouncements = createUpdater(STORAGE_KEYS.ANNOUNCEMENTS, setAnnouncements);
 
   const logAction = (action: string, details: string) => {
     const user = userRole === 'admin' ? 'Admin' : (userRole === 'moderator' ? 'Edrees' : 'System');
