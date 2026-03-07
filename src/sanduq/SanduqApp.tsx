@@ -493,7 +493,7 @@ export default function SanduqApp() {
                       {filteredMembers.map(member => {
                         const statusInfo = getMemberStatus(member.paidUntil);
                         return (
-                          <tr key={member.id} onClick={() => setViewMemberHistory(member)} className="hover:bg-accent/50 transition cursor-pointer group">
+                          <tr key={member.id} onClick={() => setViewMemberHistory(member)} className={`hover:bg-accent/50 transition cursor-pointer group ${statusInfo.status === 'late' ? 'animate-pulse-red-glow' : ''}`}>
                             <td className="px-5 py-3"><div className="font-medium text-foreground flex items-center gap-3 text-sm">{member.profileImage ? <img src={member.profileImage} className="w-8 h-8 rounded-md object-cover shrink-0" /> : <div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">{member.name.charAt(0)}</div>}<div className="min-w-0"><div className="truncate">{member.name}</div><div className="text-[10px] text-muted-foreground font-normal">{member.phone}</div></div>{canEdit && <button onClick={(e) => { e.stopPropagation(); setEditingMember(member); setIsEditMemberModalOpen(true); }} className="text-muted-foreground/30 hover:text-primary p-1 mr-1 shrink-0 opacity-0 group-hover:opacity-100 transition"><Edit size={13} /></button>}</div></td>
                             <td className="px-5 py-3"><span className="font-mono text-xs text-foreground bg-secondary px-2 py-0.5 rounded">{formatDisplayDate(String(member.paidUntil))}</span></td>
                             <td className="px-5 py-3"><span className="font-semibold text-foreground text-sm">{formatCurrency(member.totalPaid)}</span></td>
@@ -512,7 +512,7 @@ export default function SanduqApp() {
                   {filteredMembers.map(member => {
                     const statusInfo = getMemberStatus(member.paidUntil);
                     return (
-                      <div key={member.id} onClick={() => setViewMemberHistory(member)} className="p-3.5 hover:bg-accent/30 transition cursor-pointer active:bg-accent/50">
+                      <div key={member.id} onClick={() => setViewMemberHistory(member)} className={`p-3.5 hover:bg-accent/30 transition cursor-pointer active:bg-accent/50 ${statusInfo.status === 'late' ? 'animate-pulse-red-glow' : ''}`}>
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
                             {member.profileImage ? <img src={member.profileImage} className="w-9 h-9 rounded-md object-cover shrink-0" /> : <div className="w-9 h-9 rounded-md bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs shrink-0">{member.name.charAt(0)}</div>}
