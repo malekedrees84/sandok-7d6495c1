@@ -62,9 +62,33 @@ export interface Announcement {
   active: boolean;
 }
 
+export type UserRole = 'admin' | 'moderator';
+
+export interface AppUser {
+  id: string;
+  username: string;
+  password: string;
+  displayName: string;
+  role: UserRole;
+}
+
+export interface AppSessionUser {
+  id: string;
+  username: string;
+  displayName: string;
+  role: UserRole;
+}
+
+export const DEFAULT_APP_USERS: AppUser[] = [
+  { id: 'admin-main', username: 'Admin', password: 'Admin123', displayName: 'Admin', role: 'admin' },
+  { id: 'malek-owner', username: 'malek', password: 'Aa100300', displayName: 'malek', role: 'admin' },
+  { id: 'edrees-moderator', username: 'edrees', password: '123456', displayName: 'Edrees', role: 'moderator' },
+];
+
+export const USER_MANAGER_USERNAME = 'malek';
 export const MONTHLY_FEE = 50;
 export const START_DATE = '2023-07-10';
-export const ADMIN_USERNAME = "admin";
-export const ADMIN_PASSWORD = "Aa100300";
+export const ADMIN_USERNAME = "Admin";
+export const ADMIN_PASSWORD = "Admin123";
 export const MODERATOR_USERNAME = "edrees";
 export const MODERATOR_PASSWORD = "123456";

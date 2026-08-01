@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Users, User, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown, ChevronRight, Vault, Pencil, Check } from 'lucide-react';
-import { Member, PaymentTransaction, Expense, MONTHLY_FEE, START_DATE, AuditLog, VisitorLog, Announcement, TreasuryTransaction } from './types';
+import { Users, User, DollarSign, Search, Plus, Wallet, TrendingUp, TrendingDown, Lock, Unlock, FileSpreadsheet, LayoutDashboard, Receipt, Sparkles, Settings, Share2, FileBarChart, Edit, X as XIcon, Eye, ShieldCheck, UserCheck, Bell, Printer, Camera, Menu, X, ChevronDown, ChevronRight, Vault, Pencil, Check, UserCog } from 'lucide-react';
+import { Member, PaymentTransaction, Expense, MONTHLY_FEE, START_DATE, AuditLog, VisitorLog, Announcement, TreasuryTransaction, AppUser, AppSessionUser } from './types';
 import { StatCard } from './components/StatCard';
 import { PaymentModal } from './components/PaymentModal';
 import { MemberHistoryModal } from './components/MemberHistoryModal';
@@ -19,14 +19,15 @@ import { NewsTicker } from './components/NewsTicker';
 import { ManageNewsModal } from './components/ManageNewsModal';
 import { TreasuryModal } from './components/TreasuryModal';
 import { FamilyAssignmentModal } from './components/FamilyAssignmentModal';
+import { UserManagementModal } from './components/UserManagementModal';
 import { formatCurrency, formatDisplayDate, getMemberStatus, parseMonthStr, formatMonthStr, downloadCSV, compressImage, generatePDF } from './utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, addMonths } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { db } from './services/db';
+import { canManageAppUsers, LEGACY_SESSION_ROLE_STORAGE_KEY, loadAppUsers, saveAppUsers, SESSION_USER_STORAGE_KEY, toSessionUser } from './auth';
 
 const STORAGE_KEYS = {
-  SESSION_ROLE: 'sanduq_user_role',
   TICKER_DIRECTION: 'sanduq_ticker_direction', TICKER_SPEED: 'sanduq_ticker_speed'
 };
 
@@ -46,9 +47,12 @@ export default function SanduqApp() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'members' | 'expenses'>('dashboard');
   const [tickerDirection, setTickerDirection] = useState<'rtl' | 'ltr'>('ltr');
   const [tickerDuration, setTickerDuration] = useState<number>(25);
-  const [userRole, setUserRole] = useState<'admin' | 'moderator' | null>(null);
+  const [appUsers, setAppUsers] = useState<AppUser[]>(() => loadAppUsers());
+  const [currentUser, setCurrentUser] = useState<AppSessionUser | null>(null);
+  const userRole = currentUser?.role || null;
   const isLoggedIn = userRole !== null;
   const isAdmin = userRole === 'admin';
+  const isUserManager = canManageAppUsers(currentUser);
   const canEdit = userRole === 'admin' || userRole === 'moderator';
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>('all');
@@ -79,6 +83,7 @@ export default function SanduqApp() {
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
   const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
   const [isFamilyAssignOpen, setIsFamilyAssignOpen] = useState(false);
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
   const [isAddMemberMode, setIsAddMemberMode] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberPhone, setNewMemberPhone] = useState('');
@@ -101,9 +106,38 @@ export default function SanduqApp() {
     if (savedDir === 'rtl') setTickerDirection('rtl');
     const savedSpeed = localStorage.getItem(STORAGE_KEYS.TICKER_SPEED);
     if (savedSpeed) setTickerDuration(Number(savedSpeed));
-    const savedRole = localStorage.getItem(STORAGE_KEYS.SESSION_ROLE);
-    if (savedRole === 'admin' || savedRole === 'moderator') setUserRole(savedRole as any);
   }, []);
+
+  // Restore saved login session.
+  useEffect(() => {
+    const savedSession = localStorage.getItem(SESSION_USER_STORAGE_KEY);
+    if (savedSession) {
+      try {
+        const parsed = JSON.parse(savedSession) as Partial<AppSessionUser>;
+        const matchedUser = appUsers.find((user) => user.id === parsed.id || user.username.toLowerCase() === String(parsed.username || '').toLowerCase());
+
+        if (matchedUser) {
+          const sessionUser = toSessionUser(matchedUser);
+          setCurrentUser(sessionUser);
+          localStorage.setItem(SESSION_USER_STORAGE_KEY, JSON.stringify(sessionUser));
+          return;
+        }
+      } catch {
+        localStorage.removeItem(SESSION_USER_STORAGE_KEY);
+      }
+    }
+
+    const legacyRole = localStorage.getItem(LEGACY_SESSION_ROLE_STORAGE_KEY);
+    if (legacyRole === 'admin' || legacyRole === 'moderator') {
+      const matchedUser = appUsers.find((user) => user.role === legacyRole);
+      if (matchedUser) {
+        const sessionUser = toSessionUser(matchedUser);
+        setCurrentUser(sessionUser);
+        localStorage.setItem(SESSION_USER_STORAGE_KEY, JSON.stringify(sessionUser));
+      }
+      localStorage.removeItem(LEGACY_SESSION_ROLE_STORAGE_KEY);
+    }
+  }, [appUsers]);
 
   const handleSaveTickerSettings = (dir: 'rtl' | 'ltr', duration: number) => {
     setTickerDirection(dir); setTickerDuration(duration);
@@ -135,14 +169,46 @@ export default function SanduqApp() {
   };
 
   const logAction = async (action: string, details: string) => {
-    const user = userRole === 'admin' ? 'Admin' : (userRole === 'moderator' ? 'Edrees' : 'System');
+    const user = currentUser?.displayName || currentUser?.username || 'System';
     const log: AuditLog = { id: Date.now().toString(), user, action, details, timestamp: new Date().toISOString() };
     setAuditLogs(prev => [log, ...prev]);
     await db.insertAuditLog(log);
   };
 
-  const handleUserLogin = (role: 'admin' | 'moderator') => { setUserRole(role); localStorage.setItem(STORAGE_KEYS.SESSION_ROLE, role); setIsLoginModalOpen(false); };
-  const handleUserLogout = () => { if (window.confirm("هل أنت متأكد من تسجيل الخروج؟")) { setUserRole(null); localStorage.removeItem(STORAGE_KEYS.SESSION_ROLE); setIsAddMemberMode(false); } };
+  const handleUserLogin = (user: AppUser) => {
+    const sessionUser = toSessionUser(user);
+    setCurrentUser(sessionUser);
+    localStorage.setItem(SESSION_USER_STORAGE_KEY, JSON.stringify(sessionUser));
+    localStorage.removeItem(LEGACY_SESSION_ROLE_STORAGE_KEY);
+    setIsLoginModalOpen(false);
+  };
+
+  const handleUserLogout = () => {
+    if (window.confirm("هل أنت متأكد من تسجيل الخروج؟")) {
+      setCurrentUser(null);
+      localStorage.removeItem(SESSION_USER_STORAGE_KEY);
+      localStorage.removeItem(LEGACY_SESSION_ROLE_STORAGE_KEY);
+      setIsAddMemberMode(false);
+      setIsUserManagementOpen(false);
+    }
+  };
+
+  const handleSaveUsers = (nextUsers: AppUser[]) => {
+    const normalizedUsers = nextUsers;
+    setAppUsers(normalizedUsers);
+    saveAppUsers(normalizedUsers);
+
+    if (currentUser) {
+      const updatedCurrentUser = normalizedUsers.find((user) => user.id === currentUser.id);
+      if (updatedCurrentUser) {
+        const sessionUser = toSessionUser(updatedCurrentUser);
+        setCurrentUser(sessionUser);
+        localStorage.setItem(SESSION_USER_STORAGE_KEY, JSON.stringify(sessionUser));
+      }
+    }
+
+    void logAction('تعديل المستخدمين', 'تحديث قائمة مستخدمي النظام');
+  };
 
   const handleConfirmPayment = async (amount: number, newPaidUntil: string, treasuryHolder?: string) => {
     if (!selectedMember) return;
@@ -461,7 +527,11 @@ export default function SanduqApp() {
   const toggleFamily = (familyId: string) => {
     setCollapsedFamilies(prev => {
       const next = new Set(prev);
-      next.has(familyId) ? next.delete(familyId) : next.add(familyId);
+      if (next.has(familyId)) {
+        next.delete(familyId);
+      } else {
+        next.add(familyId);
+      }
       return next;
     });
   };
@@ -501,10 +571,14 @@ export default function SanduqApp() {
             <button onClick={() => { if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition hidden sm:flex items-center justify-center"><Share2 size={15} /></button>
             {isAdmin && (
               <>
+                {isUserManager && (
+                  <button onClick={() => setIsUserManagementOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition hidden sm:flex items-center justify-center" title="لوحة المستخدمين"><UserCog size={15} /></button>
+                )}
                 <button onClick={() => setIsAuditLogsOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition hidden sm:flex items-center justify-center"><ShieldCheck size={15} /></button>
                 <button onClick={() => setIsSettingsOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition hidden sm:flex items-center justify-center"><Settings size={15} /></button>
               </>
             )}
+            {currentUser && <span className="hidden md:inline-flex h-8 items-center px-2.5 rounded-lg bg-secondary text-[11px] font-bold text-muted-foreground">{currentUser.displayName}</span>}
             <button onClick={() => isLoggedIn ? handleUserLogout() : setIsLoginModalOpen(true)} className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isLoggedIn ? 'text-destructive bg-destructive/10 hover:bg-destructive/15' : 'text-muted-foreground bg-secondary hover:bg-accent'}`}>
               {isLoggedIn ? <><Unlock size={13} /><span className="hidden xs:inline">خروج</span></> : <><Lock size={13} /><span className="hidden xs:inline">دخول</span></>}
             </button>
@@ -518,6 +592,9 @@ export default function SanduqApp() {
         {mobileMenuOpen && isAdmin && (
           <div className="sm:hidden border-t border-border px-3 py-2 space-y-0.5 animate-fade-in bg-card">
             <button onClick={() => { setMobileMenuOpen(false); if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><Share2 size={15} /> مشاركة</button>
+            {isUserManager && (
+              <button onClick={() => { setMobileMenuOpen(false); setIsUserManagementOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><UserCog size={15} /> لوحة المستخدمين</button>
+            )}
             <button onClick={() => { setMobileMenuOpen(false); setIsAuditLogsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><ShieldCheck size={15} /> سجل العمليات</button>
             <button onClick={() => { setMobileMenuOpen(false); setIsSettingsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><Settings size={15} /> الإعدادات</button>
           </div>
@@ -932,7 +1009,8 @@ export default function SanduqApp() {
       <MemberHistoryModal isOpen={!!viewMemberHistory} onClose={() => setViewMemberHistory(null)} member={viewMemberHistory} transactions={payments} onDeleteTransaction={isAdmin ? handleDeleteTransaction : undefined} />
       <ExpenseModal isOpen={isExpenseModalOpen} onClose={() => setIsExpenseModalOpen(false)} onAdd={handleAddExpense} />
       <WhatsAppImportModal isOpen={isWhatsAppModalOpen} onClose={() => setIsWhatsAppModalOpen(false)} members={members} onConfirm={handleBatchPayment} />
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} onLogin={handleUserLogin} />
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} users={appUsers} onLogin={handleUserLogin} />
+      <UserManagementModal isOpen={isUserManagementOpen} onClose={() => setIsUserManagementOpen(false)} users={appUsers} onSaveUsers={handleSaveUsers} />
       <EditMemberModal isOpen={isEditMemberModalOpen} onClose={() => setIsEditMemberModalOpen(false)} member={editingMember} onUpdate={handleUpdateMember} allMembers={members} />
       <RemindersModal isOpen={isRemindersModalOpen} onClose={() => setIsRemindersModalOpen(false)} members={members} onMarkAsSent={handleMarkReminderSent} />
       <TreasuryModal isOpen={isTreasuryOpen} onClose={() => setIsTreasuryOpen(false)} transactions={treasuryTx} onAddTransaction={handleAddTreasuryTx} onDeleteTransaction={handleDeleteTreasuryTx} canEdit={canEdit} />

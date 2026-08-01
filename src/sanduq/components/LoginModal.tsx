@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Lock, X, User } from 'lucide-react';
-import { ADMIN_PASSWORD, ADMIN_USERNAME, MODERATOR_USERNAME, MODERATOR_PASSWORD } from '../types';
+import { AppUser } from '../types';
+import { authenticateUser } from '../auth';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (role: 'admin' | 'moderator') => void;
+  users: AppUser[];
+  onLogin: (user: AppUser) => void;
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => {
+export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, users, onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
@@ -19,12 +21,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
     e.preventDefault();
     const cleanUser = username.trim();
     const cleanPass = password.trim();
+    const matchedUser = authenticateUser(users, cleanUser, cleanPass);
 
-    if (cleanUser === ADMIN_USERNAME && cleanPass === ADMIN_PASSWORD) {
-      onLogin('admin');
-      resetAndClose();
-    } else if (cleanUser === MODERATOR_USERNAME && cleanPass === MODERATOR_PASSWORD.trim()) {
-      onLogin('moderator');
+    if (matchedUser) {
+      onLogin(matchedUser);
       resetAndClose();
     } else {
       setError(true);
