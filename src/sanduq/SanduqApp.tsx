@@ -19,6 +19,8 @@ import { NewsTicker } from './components/NewsTicker';
 import { ManageNewsModal } from './components/ManageNewsModal';
 import { TreasuryModal } from './components/TreasuryModal';
 import { FamilyAssignmentModal } from './components/FamilyAssignmentModal';
+import { CloudStatusBanner } from './components/CloudStatusBanner';
+
 import { formatCurrency, formatDisplayDate, getMemberStatus, parseMonthStr, formatMonthStr, downloadCSV, compressImage, generatePDF } from './utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, addMonths } from 'date-fns';
@@ -523,6 +525,10 @@ export default function SanduqApp() {
           </div>
         )}
       </header>
+
+      <CloudStatusBanner />
+
+
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* TABS */}
