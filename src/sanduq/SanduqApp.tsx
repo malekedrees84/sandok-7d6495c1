@@ -15,6 +15,7 @@ import { RemindersModal } from './components/RemindersModal';
 import { SplashScreen } from './components/SplashScreen';
 import { PublicInquiryModal } from './components/PublicInquiryModal';
 import { AuditLogsModal } from './components/AuditLogsModal';
+import { PaymentsLogModal } from './components/PaymentsLogModal';
 import { NewsTicker } from './components/NewsTicker';
 import { ManageNewsModal } from './components/ManageNewsModal';
 import { TreasuryModal } from './components/TreasuryModal';
@@ -78,6 +79,7 @@ export default function SanduqApp() {
   const [isRemindersModalOpen, setIsRemindersModalOpen] = useState(false);
   const [isPublicInquiryOpen, setIsPublicInquiryOpen] = useState(false);
   const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
+  const [isPaymentsLogOpen, setIsPaymentsLogOpen] = useState(false);
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
   const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
   const [isFamilyAssignOpen, setIsFamilyAssignOpen] = useState(false);
@@ -500,6 +502,7 @@ export default function SanduqApp() {
             <button onClick={() => setIsPublicInquiryOpen(true)} className="h-8 px-2 sm:px-3 text-xs font-bold rounded-lg text-white hover:opacity-90 transition flex items-center gap-1.5 shadow-sm" style={{ background: 'var(--gradient-primary)' }} title="افحص اشتراكك">
               <UserCheck size={14} /><span className="hidden sm:inline">افحص حالتك</span>
             </button>
+            <button onClick={() => setIsPaymentsLogOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition hidden sm:flex items-center justify-center" title="سجل الدفعات"><Receipt size={15} /></button>
             <button onClick={() => { if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition hidden sm:flex items-center justify-center"><Share2 size={15} /></button>
             {isAdmin && (
               <>
@@ -520,6 +523,7 @@ export default function SanduqApp() {
         {mobileMenuOpen && isAdmin && (
           <div className="sm:hidden border-t border-border px-3 py-2 space-y-0.5 animate-fade-in bg-card">
             <button onClick={() => { setMobileMenuOpen(false); if (navigator.share) navigator.share({ title: 'صندوق العائلة', url: window.location.href }); else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط'); } }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><Share2 size={15} /> مشاركة</button>
+            <button onClick={() => { setMobileMenuOpen(false); setIsPaymentsLogOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><Receipt size={15} /> سجل الدفعات</button>
             <button onClick={() => { setMobileMenuOpen(false); setIsAuditLogsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><ShieldCheck size={15} /> سجل العمليات</button>
             <button onClick={() => { setMobileMenuOpen(false); setIsSettingsOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition"><Settings size={15} /> الإعدادات</button>
           </div>
@@ -922,6 +926,7 @@ export default function SanduqApp() {
 
       {/* MODALS */}
       <PublicInquiryModal isOpen={isPublicInquiryOpen} onClose={() => setIsPublicInquiryOpen(false)} members={members} onCheck={handlePublicCheck} />
+      <PaymentsLogModal isOpen={isPaymentsLogOpen} onClose={() => setIsPaymentsLogOpen(false)} members={members} payments={payments} />
       <AuditLogsModal isOpen={isAuditLogsOpen} onClose={() => setIsAuditLogsOpen(false)} logs={auditLogs} />
       <ManageNewsModal isOpen={isNewsModalOpen} onClose={() => setIsNewsModalOpen(false)} announcements={announcements} onAdd={handleAddAnnouncement} onDelete={handleDeleteAnnouncement} currentDirection={tickerDirection} currentDuration={tickerDuration} onSaveSettings={handleSaveTickerSettings} />
       <AIChatModal isOpen={isAIChatOpen} onClose={() => setIsAIChatOpen(false)} members={members} expenses={expenses}
