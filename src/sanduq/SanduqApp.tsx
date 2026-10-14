@@ -55,6 +55,7 @@ export default function SanduqApp() {
   const canEdit = userRole === 'admin' || userRole === 'moderator';
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'families' | 'members'>('families');
   const [collapsedFamilies, setCollapsedFamilies] = useState<Set<string>>(new Set());
@@ -409,7 +410,18 @@ export default function SanduqApp() {
 
   if (showSplash) return <SplashScreen onEnter={() => setShowSplash(false)} />;
 
-  const filteredMembers = members.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()) && (filterMonth === 'all' || m.paidUntil === filterMonth));
+  const filteredMembers = members.filter(m => {
+    if (!m.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (filterMonth !== 'all' && m.paidUntil !== filterMonth) return false;
+    if (filterStatus !== 'all') {
+      const st = getMemberStatus(m.paidUntil).status;
+      if (filterStatus === 'cleared' && st !== 'paid') return false;               // خالص (بعد الشهر الحالي)
+      if (filterStatus === 'current' && st !== 'paid') return false;               // مدفوع لغاية الشهر الحالي
+      if (filterStatus === 'current' && m.paidUntil !== formatMonthStr(new Date())) return false;
+      if (filterStatus === 'late' && st === 'paid') return false;                  // متاخر
+    }
+    return true;
+  });
 
   // Family color palette using HSL semantic tokens
   const familyColors = [
