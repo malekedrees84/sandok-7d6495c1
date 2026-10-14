@@ -415,10 +415,10 @@ export default function SanduqApp() {
     if (filterMonth !== 'all' && m.paidUntil !== filterMonth) return false;
     if (filterStatus !== 'all') {
       const st = getMemberStatus(m.paidUntil).status;
-      if (filterStatus === 'cleared' && st !== 'paid') return false;               // خالص (بعد الشهر الحالي)
-      if (filterStatus === 'current' && st !== 'paid') return false;               // مدفوع لغاية الشهر الحالي
-      if (filterStatus === 'current' && m.paidUntil !== formatMonthStr(new Date())) return false;
-      if (filterStatus === 'late' && st === 'paid') return false;                  // متاخر
+      const currentMonth = formatMonthStr(new Date());
+      if (filterStatus === 'cleared' && (st !== 'paid' || m.paidUntil === currentMonth)) return false; // خالص بعد الشهر الحالي
+      if (filterStatus === 'current' && (st !== 'paid' || m.paidUntil !== currentMonth)) return false; // مدفوع لغاية الشهر الحالي
+      if (filterStatus === 'late' && st === 'paid') return false;                                      // متاخر
     }
     return true;
   });
@@ -654,6 +654,12 @@ export default function SanduqApp() {
                         <button onClick={() => setViewMode('families')} className={`h-8 px-2.5 text-[11px] font-medium transition flex items-center gap-1 ${viewMode === 'families' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}><Users size={12} /> عائلات</button>
                         <button onClick={() => setViewMode('members')} className={`h-8 px-2.5 text-[11px] font-medium transition flex items-center gap-1 ${viewMode === 'members' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}><User size={12} /> أفراد</button>
                       </div>
+                      <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="h-8 px-2.5 bg-secondary border border-border rounded-md text-xs min-w-0 focus:outline-none focus:ring-1 focus:ring-ring">
+                        <option value="all">الحالة: الكل</option>
+                        <option value="cleared">خالص</option>
+                        <option value="current">مدفوع لغاية الشهر الحالي</option>
+                        <option value="late">متاخر</option>
+                      </select>
                       <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="h-8 px-2.5 bg-secondary border border-border rounded-md text-xs min-w-0 focus:outline-none focus:ring-1 focus:ring-ring">
                         <option value="all">الجميع</option>
                         {Array.from(new Set(members.map(m => m.paidUntil))).sort().reverse().map((date: string) => <option key={date} value={date}>{formatDisplayDate(date)}</option>)}
