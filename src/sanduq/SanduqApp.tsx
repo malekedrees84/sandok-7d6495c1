@@ -606,22 +606,62 @@ export default function SanduqApp() {
                   </button>
                 )}
                 <div className="flex-1 bg-secondary/50 rounded-lg p-3 border border-border overflow-hidden">
-                  <h4 className="font-semibold text-foreground mb-2 text-xs">آخر 20 دفعة</h4>
-                  <div className="max-h-60 overflow-y-auto space-y-2 scrollbar-thin">
-                    {recentTransactions.length === 0 && <p className="text-[11px] text-muted-foreground text-center py-4">لا توجد دفعات بعد</p>}
-                    {recentTransactions.map((tx, idx) => (
-                      <div key={idx} className="flex justify-between items-center border-b border-border/50 pb-1.5 last:border-0 last:pb-0">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-6 h-6 shrink-0 rounded-md bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">{tx.memberName.charAt(0)}</div>
-                          <p className="text-[11px] font-medium text-foreground truncate">{tx.memberName}</p>
+                  {(() => {
+                    const pageCount = Math.max(1, Math.ceil(allSortedPayments.length / 20));
+                    const page = Math.min(recentPage, pageCount - 1);
+                    const pageItems = allSortedPayments.slice(page * 20, page * 20 + 20);
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-2 gap-1">
+                          <h4 className="font-semibold text-foreground text-xs whitespace-nowrap">
+                            {page === 0 ? 'آخر 20 دفعة' : `الدفعات ${page * 20 + 1}-${Math.min((page + 1) * 20, allSortedPayments.length)}`}
+                          </h4>
+                          {pageCount > 1 && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => setRecentPage(p => Math.max(0, p - 1))}
+                                disabled={page === 0}
+                                className="h-6 px-2 rounded-md text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-0.5"
+                              >
+                                <ChevronDown size={11} className="rotate-90" /> أحدث
+                              </button>
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">{page + 1}/{pageCount}</span>
+                              <button
+                                onClick={() => setRecentPage(p => Math.min(pageCount - 1, p + 1))}
+                                disabled={page >= pageCount - 1}
+                                className="h-6 px-2 rounded-md text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-0.5"
+                              >
+                                أقدم <ChevronDown size={11} className="-rotate-90" />
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[10px] text-muted-foreground">{format(new Date(tx.date), 'dd/MM/yyyy')}</span>
-                          <span className={`text-[11px] font-bold dir-ltr ${tx.amount > 0 ? 'text-[hsl(var(--success))]' : 'text-destructive'}`}>{tx.amount > 0 ? '+' : ''}{tx.amount}</span>
+                        <div className="max-h-60 overflow-y-auto space-y-2 scrollbar-thin">
+                          {pageItems.length === 0 && <p className="text-[11px] text-muted-foreground text-center py-4">لا توجد دفعات بعد</p>}
+                          {pageItems.map((tx, idx) => (
+                            <div key={tx.id} className="flex justify-between items-center border-b border-border/50 pb-1.5 last:border-0 last:pb-0">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-6 h-6 shrink-0 rounded-md bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">{tx.memberName.charAt(0)}</div>
+                                <p className="text-[11px] font-medium text-foreground truncate">{tx.memberName}</p>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-[10px] text-muted-foreground">{format(new Date(tx.date), 'dd/MM/yyyy')}</span>
+                                <span className={`text-[11px] font-bold dir-ltr ${tx.amount > 0 ? 'text-[hsl(var(--success))]' : 'text-destructive'}`}>{tx.amount > 0 ? '+' : ''}{tx.amount}</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                        {pageCount > 1 && (
+                          <div className="flex justify-between items-center mt-2 pt-2 border-t border-border/50">
+                            <span className="text-[10px] text-muted-foreground">إجمالي الدفعات: <b className="text-foreground">{allSortedPayments.length}</b></span>
+                            <button onClick={() => setRecentPage(pageCount - 1)} disabled={page >= pageCount - 1} className="text-[10px] font-medium text-primary hover:underline disabled:opacity-30 disabled:no-underline disabled:cursor-not-allowed">
+                              الأولى (أول دفعة)
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
                 {canEdit ? (
                   <div className="flex gap-2">
