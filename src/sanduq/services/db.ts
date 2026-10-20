@@ -70,7 +70,7 @@ export const db = {
       status: m.status, profile_image: m.profileImage || null,
       head_member_id: m.headMemberId || null,
     });
-    if (error) console.error('upsertMember error:', error);
+    if (error) { console.error('upsertMember error:', error); throw error; }
   },
   async deleteMember(id: string) {
     const { error } = await supabase.from('members').delete().eq('id', id);
@@ -93,7 +93,7 @@ export const db = {
       months_covered: p.monthsCovered, previous_paid_until: p.previousPaidUntil,
       new_paid_until: p.newPaidUntil,
     });
-    if (error) console.error('insertPayment error:', error);
+    if (error) { console.error('insertPayment error:', error); throw error; }
   },
   async deletePayment(id: string) {
     const { error } = await supabase.from('payments').delete().eq('id', id);
@@ -201,7 +201,7 @@ export const db = {
     const { error } = await supabase.from('treasury_transactions').insert({
       id: t.id, holder: t.holder, type: t.type, amount: t.amount, description: t.description, date: t.date,
     });
-    if (error) console.error('insertTreasuryTransaction error:', error);
+    if (error) { console.error('insertTreasuryTransaction error:', error); throw error; }
   },
   async deleteTreasuryTransaction(id: string) {
     const { error } = await supabase.from('treasury_transactions').delete().eq('id', id);

@@ -4,6 +4,7 @@ import { getScriptUrl, setScriptUrl } from '../services/api';
 import { downloadJSON, readJSONFile } from '../utils';
 import { Member, PaymentTransaction, Expense } from '../types';
 import { db } from '../services/db';
+import { LocalSnapshotsSection } from './LocalSnapshotsSection';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -134,6 +135,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
               </button>
             </div>
           </section>
+          <LocalSnapshotsSection onRestored={onDataRestored} />
           <hr className="border-border" />
           <section>
             <div className="mb-4 bg-blue-50 border border-blue-100 p-4 rounded-xl">

@@ -27,6 +27,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { format, addMonths } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { db } from './services/db';
+import { autoSnapshotIfDue } from './services/localSnapshots';
 
 const STORAGE_KEYS = {
   SESSION_ROLE: 'sanduq_user_role',
@@ -126,6 +127,7 @@ export default function SanduqApp() {
       ]);
       setMembers(m); setPayments(p); setExpenses(e);
       setAuditLogs(al); setVisitorLogs(vl); setAnnouncements(an); setTreasuryTx(tt);
+      if (m.length > 0) autoSnapshotIfDue();
     } catch (err) { console.error('Load error:', err); }
     setIsLoading(false);
   }, []);
@@ -135,7 +137,7 @@ export default function SanduqApp() {
   // Helper: run async DB op with saving indicator
   const withSaving = async (fn: () => Promise<void>) => {
     setIsSaving(true);
-    try { await fn(); } catch (e) { console.error(e); }
+    try { await fn(); } catch (e: any) { console.error(e); alert('⚠️ لم يتم الحفظ في قاعدة البيانات! تأكد من الاتصال وأعد المحاولة.\n' + (e?.message || '')); loadAllData(); }
     setIsSaving(false);
   };
 
