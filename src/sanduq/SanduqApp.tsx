@@ -395,7 +395,8 @@ export default function SanduqApp() {
     return data;
   };
   const chartData = getChartData();
-  const recentTransactions = [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 20).map(t => ({ ...t, memberName: members.find(m => m.id === t.memberId)?.name || 'عضو محذوف' }));
+  const allSortedPayments = useMemo(() => [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(t => ({ ...t, memberName: members.find(m => m.id === t.memberId)?.name || 'عضو محذوف' })), [payments, members]);
+  const recentTransactions = allSortedPayments.slice(0, 20);
 
   const getCategoryStyle = (category: string) => {
     if (category.includes('فرح')) return 'bg-pink-50 text-pink-700 border border-pink-200';
