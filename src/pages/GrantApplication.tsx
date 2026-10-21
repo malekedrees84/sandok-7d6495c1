@@ -16,7 +16,7 @@ const GrantApplication = () => {
           </p>
         </header>
 
-        <main className="animate-fluent-reveal flex-1 rounded-2xl border border-border/70 bg-card/90 p-5 shadow-xl backdrop-blur-sm sm:p-7">
+        <main className="animate-fluent-reveal rounded-2xl border border-border/70 bg-card/90 p-5 shadow-xl backdrop-blur-sm sm:p-7">
           <GrantApplicationForm />
         </main>
 
