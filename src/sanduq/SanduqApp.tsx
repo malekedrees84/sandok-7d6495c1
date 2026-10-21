@@ -446,6 +446,25 @@ export default function SanduqApp() {
     return true;
   });
 
+  // Member counts: totals, family grouping and status breakdown
+  const memberStats = (() => {
+    const total = members.length;
+    const heads = members.filter(m => !m.headMemberId);
+    const depsOf = (id: string) => members.filter(d => d.headMemberId === id);
+    const familyHeads = heads.filter(h => depsOf(h.id).length > 0 || !!familyNames[h.id]);
+    const inFamilies = familyHeads.reduce((n, h) => n + 1 + depsOf(h.id).length, 0);
+    const singles = total - inFamilies;
+    const currentMonth = formatMonthStr(new Date());
+    let cleared = 0, current = 0, late = 0;
+    members.forEach(m => {
+      const st = getMemberStatus(m.paidUntil).status;
+      if (st !== 'paid') late++;
+      else if (m.paidUntil === currentMonth) current++;
+      else cleared++;
+    });
+    return { total, families: familyHeads.length, inFamilies, singles, cleared, current, late };
+  })();
+
   // Family color palette using HSL semantic tokens
   const familyColors = [
     { bg: 'hsl(262 83% 58% / 0.08)', border: 'hsl(262 83% 58% / 0.25)', text: 'hsl(262 83% 58%)', headerBg: 'hsl(262 83% 58% / 0.12)' },
@@ -514,6 +533,14 @@ export default function SanduqApp() {
     setFamilyNames(updated);
     localStorage.setItem('sanduq_family_names', JSON.stringify(updated));
     setEditingFamilyId(null);
+  };
+
+  const showMembersWithStatus = (status: string) => {
+    setFilterStatus(status);
+    setFilterMonth('all');
+    setSearchTerm('');
+    setViewMode('members');
+    setActiveTab('members');
   };
 
   return (
@@ -587,7 +614,12 @@ export default function SanduqApp() {
         {!isLoading && activeTab === 'dashboard' && (
           <div className="space-y-3 sm:space-y-5 animate-fluent-reveal">
             <NewsTicker announcements={announcements} canEdit={canEdit} onEdit={() => setIsNewsModalOpen(true)} direction={tickerDirection} duration={tickerDuration} />
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
+              <div className="col-span-2 lg:col-span-1">
+                <button type="button" onClick={() => showMembersWithStatus('all')} className="w-full text-right cursor-pointer" title="عرض قائمة الأعضاء">
+                  <StatCard title="عدد الأعضاء" value={memberStats.total.toString()} icon={<Users size={18} />} trend={`${memberStats.families} عائلات · ${memberStats.singles} بدون عائلة`} gradient="linear-gradient(135deg, hsl(207 90% 54%), hsl(207 90% 64%))" />
+                </button>
+              </div>
               <StatCard title="الرصيد" value={formatCurrency(netBalance)} icon={<span className="text-lg sm:text-xl font-black">₪</span>} trend="متوفر" gradient="linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 68%))" />
               <StatCard title="التحصيلات" value={formatCurrency(totalIncome)} icon={<TrendingUp size={18} />} gradient="linear-gradient(135deg, hsl(175 70% 41%), hsl(175 70% 51%))" />
               <StatCard title="المصروفات" value={formatCurrency(totalExpenses_val)} icon={<TrendingDown size={18} />} gradient="linear-gradient(135deg, hsl(330 85% 55%), hsl(330 85% 65%))" />
@@ -688,8 +720,32 @@ export default function SanduqApp() {
                     <button onClick={() => setIsExpenseModalOpen(true)} className="flex-1 h-9 bg-destructive/5 hover:bg-destructive/10 text-destructive rounded-md border border-destructive/20 transition flex items-center justify-center gap-1 text-[11px] font-medium"><Receipt size={13} /> مصروف</button>
                   </div>
                 ) : <div className="text-center text-[10px] text-muted-foreground py-3 bg-secondary rounded-md border border-dashed border-border"><Lock size={12} className="mx-auto mb-1 opacity-40" /> يجب تسجيل الدخول</div>}
+            </div>
+            <div className="fluent-card p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h3 className="text-sm sm:text-base font-semibold text-foreground">عدد الأعضاء</h3>
+                <button onClick={() => showMembersWithStatus('all')} className="text-[11px] font-medium text-primary hover:underline">عرض القائمة</button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {([
+                  { key: 'all', label: 'الإجمالي', count: memberStats.total, color: 'hsl(var(--primary))' },
+                  { key: 'cleared', label: 'خالص', count: memberStats.cleared, color: 'hsl(var(--success))' },
+                  { key: 'current', label: 'مدفوع لغاية الشهر الحالي', count: memberStats.current, color: 'hsl(var(--warning))' },
+                  { key: 'late', label: 'متأخر', count: memberStats.late, color: 'hsl(var(--destructive))' },
+                ] as const).map(s => (
+                  <button key={s.key} type="button" onClick={() => showMembersWithStatus(s.key)} className="rounded-lg border border-border bg-secondary/40 hover:bg-secondary p-3 text-center transition">
+                    <p className="text-xl sm:text-2xl font-black leading-tight" style={{ color: s.color }}>{s.count}</p>
+                    <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground mt-1 leading-snug">{s.label}</p>
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2 mt-3 text-[11px] font-medium">
+                <span className="px-2.5 py-1 rounded-md bg-primary/10 text-primary flex items-center gap-1"><Users size={12} /> {memberStats.families} عائلات</span>
+                <span className="px-2.5 py-1 rounded-md bg-secondary text-muted-foreground flex items-center gap-1"><User size={12} /> {memberStats.inFamilies} ضمن عائلات</span>
+                <span className="px-2.5 py-1 rounded-md bg-secondary text-muted-foreground flex items-center gap-1"><User size={12} /> {memberStats.singles} بدون عائلة</span>
               </div>
             </div>
+          </div>
           </div>
         )}
 
@@ -700,7 +756,7 @@ export default function SanduqApp() {
               <div className="lg:col-span-3 fluent-card overflow-hidden">
                 <div className="p-4 sm:p-5 border-b border-border space-y-3">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm sm:text-base font-semibold text-foreground">قائمة الأعضاء <span className="text-muted-foreground font-normal">({filteredMembers.length})</span></h2>
+                    <h2 className="text-sm sm:text-base font-semibold text-foreground">قائمة الأعضاء <span className="text-muted-foreground font-normal">({filteredMembers.length}{filteredMembers.length !== members.length ? ` من ${members.length}` : ''})</span></h2>
                     {canEdit && (
                       <div className="flex gap-1">
                         <button onClick={() => setIsFamilyAssignOpen(true)} className="h-8 px-2.5 bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition flex items-center gap-1 text-xs font-medium"><Users size={13} /><span className="hidden sm:inline"> عائلات</span></button>
