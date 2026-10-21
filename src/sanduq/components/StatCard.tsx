@@ -24,7 +24,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, c
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">{title}</p>
-          <h3 className="text-xl sm:text-2xl font-black text-foreground truncate leading-tight">{value}</h3>
+          <h3 className="text-base sm:text-lg lg:text-xl 2xl:text-2xl font-black text-foreground truncate leading-tight">{value}</h3>
           {trend && <p className="text-[10px] sm:text-xs text-[hsl(var(--success))] mt-2 font-bold">{trend}</p>}
         </div>
         <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0 text-white shadow-md group-hover:scale-110 transition-transform" style={{ background: gradient || 'var(--gradient-primary)' }}>
