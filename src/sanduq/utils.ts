@@ -150,7 +150,7 @@ export const generatePDF = (title: string, headers: string[], rows: (string | nu
   const html = `
     <!DOCTYPE html>
     <html dir="rtl" lang="ar">
-    <head><meta charset="UTF-8"><title>${title}</title>${styles}</head>
+    <head><meta charset="UTF-8"><title>${docTitle}</title>${styles}</head>
     <body>
       <h1>${title}</h1>
       <div class="meta">تاريخ التقرير: ${new Date().toLocaleString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
