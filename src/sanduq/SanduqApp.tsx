@@ -614,7 +614,12 @@ export default function SanduqApp() {
         {!isLoading && activeTab === 'dashboard' && (
           <div className="space-y-3 sm:space-y-5 animate-fluent-reveal">
             <NewsTicker announcements={announcements} canEdit={canEdit} onEdit={() => setIsNewsModalOpen(true)} direction={tickerDirection} duration={tickerDuration} />
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
+              <div className="col-span-2 lg:col-span-1">
+                <button type="button" onClick={() => showMembersWithStatus('all')} className="w-full text-right cursor-pointer" title="عرض قائمة الأعضاء">
+                  <StatCard title="عدد الأعضاء" value={memberStats.total.toString()} icon={<Users size={18} />} trend={`${memberStats.families} عائلات · ${memberStats.singles} بدون عائلة`} gradient="linear-gradient(135deg, hsl(207 90% 54%), hsl(207 90% 64%))" />
+                </button>
+              </div>
               <StatCard title="الرصيد" value={formatCurrency(netBalance)} icon={<span className="text-lg sm:text-xl font-black">₪</span>} trend="متوفر" gradient="linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 68%))" />
               <StatCard title="التحصيلات" value={formatCurrency(totalIncome)} icon={<TrendingUp size={18} />} gradient="linear-gradient(135deg, hsl(175 70% 41%), hsl(175 70% 51%))" />
               <StatCard title="المصروفات" value={formatCurrency(totalExpenses_val)} icon={<TrendingDown size={18} />} gradient="linear-gradient(135deg, hsl(330 85% 55%), hsl(330 85% 65%))" />
