@@ -64,7 +64,3 @@ export interface Announcement {
 
 export const MONTHLY_FEE = 50;
 export const START_DATE = '2023-07-10';
-export const ADMIN_USERNAME = "malek";
-export const ADMIN_PASSWORD = "M@lek1984";
-export const MODERATOR_USERNAME = "edrees";
-export const MODERATOR_PASSWORD = "123456";

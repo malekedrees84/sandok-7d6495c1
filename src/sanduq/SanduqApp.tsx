@@ -28,9 +28,10 @@ import { format, addMonths } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { db } from './services/db';
 import { autoSnapshotIfDue } from './services/localSnapshots';
+import { supabase } from '@/integrations/supabase/client';
+import { getStaffRole } from './services/auth';
 
 const STORAGE_KEYS = {
-  SESSION_ROLE: 'sanduq_user_role',
   TICKER_DIRECTION: 'sanduq_ticker_direction', TICKER_SPEED: 'sanduq_ticker_speed'
 };
 
@@ -108,8 +109,22 @@ export default function SanduqApp() {
     if (savedDir === 'rtl') setTickerDirection('rtl');
     const savedSpeed = localStorage.getItem(STORAGE_KEYS.TICKER_SPEED);
     if (savedSpeed) setTickerDuration(Number(savedSpeed));
-    const savedRole = localStorage.getItem(STORAGE_KEYS.SESSION_ROLE);
-    if (savedRole === 'admin' || savedRole === 'moderator') setUserRole(savedRole as any);
+    localStorage.removeItem('sanduq_user_role');
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let request = 0;
+    const refreshRole = async () => {
+      const version = ++request;
+      const role = await getStaffRole();
+      if (active && version === request) setUserRole(role);
+    };
+    void refreshRole();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      window.setTimeout(() => { if (active) void refreshRole(); }, 0);
+    });
+    return () => { active = false; subscription.unsubscribe(); };
   }, []);
 
   const handleSaveTickerSettings = (dir: 'rtl' | 'ltr', duration: number) => {
@@ -149,8 +164,13 @@ export default function SanduqApp() {
     await db.insertAuditLog(log);
   };
 
-  const handleUserLogin = (role: 'admin' | 'moderator') => { setUserRole(role); localStorage.setItem(STORAGE_KEYS.SESSION_ROLE, role); setIsLoginModalOpen(false); };
-  const handleUserLogout = () => { if (window.confirm("هل أنت متأكد من تسجيل الخروج؟")) { setUserRole(null); localStorage.removeItem(STORAGE_KEYS.SESSION_ROLE); setIsAddMemberMode(false); } };
+  const handleUserLogin = (role: 'admin' | 'moderator') => { setUserRole(role); setIsLoginModalOpen(false); };
+  const handleUserLogout = async () => {
+    if (!window.confirm("هل أنت متأكد من تسجيل الخروج؟")) return;
+    const { error } = await supabase.auth.signOut();
+    if (error) { alert('تعذر تسجيل الخروج، أعد المحاولة'); return; }
+    setUserRole(null); setIsAddMemberMode(false);
+  };
 
   const handleConfirmPayment = async (amount: number, newPaidUntil: string, treasuryHolder?: string) => {
     if (!selectedMember) return;

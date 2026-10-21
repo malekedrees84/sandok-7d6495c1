@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, X, User } from 'lucide-react';
-import { ADMIN_PASSWORD, ADMIN_USERNAME, MODERATOR_USERNAME, MODERATOR_PASSWORD } from '../types';
+import { Button } from '@/components/ui/button';
+import { signInStaff } from '../services/auth';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -11,35 +12,36 @@ interface LoginModalProps {
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanUser = username.trim();
-    const cleanPass = password.trim();
-
-    if (cleanUser === ADMIN_USERNAME && cleanPass === ADMIN_PASSWORD) {
-      onLogin('admin');
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const role = await signInStaff(username.trim(), password);
+      onLogin(role);
       resetAndClose();
-    } else if (cleanUser === MODERATOR_USERNAME && cleanPass === MODERATOR_PASSWORD.trim()) {
-      onLogin('moderator');
-      resetAndClose();
-    } else {
-      setError(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'تعذر تسجيل الدخول');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const resetAndClose = () => {
-    setUsername(''); setPassword(''); setError(false); onClose();
+    setUsername(''); setPassword(''); setError(''); onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
         <div className="p-4 flex justify-end">
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
+          <Button variant="ghost" size="icon" onClick={resetAndClose} disabled={isSubmitting} aria-label="إغلاق"><X size={20} /></Button>
         </div>
         <div className="px-8 pb-8">
           <div className="flex justify-center mb-6">
@@ -50,17 +52,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
               <input type="text" placeholder="اسم المستخدم" value={username} onChange={(e) => setUsername(e.target.value)}
-                className={`w-full p-3 pr-10 border rounded-xl focus:ring-2 focus:ring-primary outline-none text-right ${error ? 'border-red-500 bg-red-50' : 'border-border'}`}
-                autoFocus />
+                className={`w-full p-3 pr-10 border rounded-xl focus:ring-2 focus:ring-primary outline-none text-right ${error ? 'border-destructive bg-destructive/10' : 'border-border'}`}
+                autoFocus autoComplete="username" disabled={isSubmitting} required />
               <User size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             </div>
             <div className="relative">
               <input type="password" placeholder="كلمة المرور" value={password} onChange={(e) => setPassword(e.target.value)}
-                className={`w-full p-3 pr-10 border rounded-xl focus:ring-2 focus:ring-primary outline-none text-right ${error ? 'border-red-500 bg-red-50' : 'border-border'}`} />
+                className={`w-full p-3 pr-10 border rounded-xl focus:ring-2 focus:ring-primary outline-none text-right ${error ? 'border-destructive bg-destructive/10' : 'border-border'}`} autoComplete="current-password" disabled={isSubmitting} required />
               <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             </div>
-            {error && <p className="text-xs text-red-500 text-center">بيانات الدخول غير صحيحة</p>}
-            <button type="submit" className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-bold transition shadow-lg hover:opacity-90">دخول</button>
+            {error && <p role="alert" className="text-xs text-destructive text-center">{error}</p>}
+            <Button type="submit" disabled={isSubmitting} className="w-full h-12 rounded-xl font-bold shadow-lg">{isSubmitting ? 'جارٍ تسجيل الدخول...' : 'دخول'}</Button>
           </form>
         </div>
       </div>
