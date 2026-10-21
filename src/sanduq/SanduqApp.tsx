@@ -19,6 +19,7 @@ import { PaymentsLogModal } from './components/PaymentsLogModal';
 import { NewsTicker } from './components/NewsTicker';
 import { ManageNewsModal } from './components/ManageNewsModal';
 import { TreasuryModal } from './components/TreasuryModal';
+import { FundUpdateModal } from './components/FundUpdateModal';
 import { FamilyAssignmentModal } from './components/FamilyAssignmentModal';
 import { CloudStatusBanner } from './components/CloudStatusBanner';
 
@@ -86,6 +87,7 @@ export default function SanduqApp() {
   const [recentPage, setRecentPage] = useState(0);
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
   const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
+  const [isFundUpdateOpen, setIsFundUpdateOpen] = useState(false);
   const [isFamilyAssignOpen, setIsFamilyAssignOpen] = useState(false);
   const [isAddMemberMode, setIsAddMemberMode] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
@@ -656,6 +658,9 @@ export default function SanduqApp() {
                     <Vault size={16} /> الخزينة
                   </button>
                 )}
+                <button onClick={() => setIsFundUpdateOpen(true)} className="w-full py-3 sm:py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold border-2 border-[hsl(var(--success))] text-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/5 transition">
+                  <Send size={16} /> رسالة آخر تحديث
+                </button>
                 <div className="flex-1 bg-secondary/50 rounded-lg p-3 border border-border overflow-hidden">
                   {(() => {
                     const pageCount = Math.max(1, Math.ceil(allSortedPayments.length / 20));
@@ -1084,6 +1089,7 @@ export default function SanduqApp() {
       <EditMemberModal isOpen={isEditMemberModalOpen} onClose={() => setIsEditMemberModalOpen(false)} member={editingMember} onUpdate={handleUpdateMember} allMembers={members} />
       <RemindersModal isOpen={isRemindersModalOpen} onClose={() => setIsRemindersModalOpen(false)} members={members} onMarkAsSent={handleMarkReminderSent} />
       <TreasuryModal isOpen={isTreasuryOpen} onClose={() => setIsTreasuryOpen(false)} transactions={treasuryTx} onAddTransaction={handleAddTreasuryTx} onDeleteTransaction={handleDeleteTreasuryTx} canEdit={canEdit} />
+      <FundUpdateModal isOpen={isFundUpdateOpen} onClose={() => setIsFundUpdateOpen(false)} totalPayments={totalIncome} totalExpenses={totalExpenses_val} treasuryTx={treasuryTx} />
       <FamilyAssignmentModal isOpen={isFamilyAssignOpen} onClose={() => setIsFamilyAssignOpen(false)} members={members} onAssign={handleFamilyAssign} />
 
       <footer className="text-center py-4 text-[11px] text-muted-foreground border-t border-border mt-6">
