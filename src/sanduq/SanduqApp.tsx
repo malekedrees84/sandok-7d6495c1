@@ -446,6 +446,25 @@ export default function SanduqApp() {
     return true;
   });
 
+  // Member counts: totals, family grouping and status breakdown
+  const memberStats = useMemo(() => {
+    const total = members.length;
+    const heads = members.filter(m => !m.headMemberId);
+    const depsOf = (id: string) => members.filter(d => d.headMemberId === id);
+    const familyHeads = heads.filter(h => depsOf(h.id).length > 0 || !!familyNames[h.id]);
+    const inFamilies = familyHeads.reduce((n, h) => n + 1 + depsOf(h.id).length, 0);
+    const singles = total - inFamilies;
+    const currentMonth = formatMonthStr(new Date());
+    let cleared = 0, current = 0, late = 0;
+    members.forEach(m => {
+      const st = getMemberStatus(m.paidUntil).status;
+      if (st !== 'paid') late++;
+      else if (m.paidUntil === currentMonth) current++;
+      else cleared++;
+    });
+    return { total, families: familyHeads.length, inFamilies, singles, cleared, current, late };
+  }, [members, familyNames]);
+
   // Family color palette using HSL semantic tokens
   const familyColors = [
     { bg: 'hsl(262 83% 58% / 0.08)', border: 'hsl(262 83% 58% / 0.25)', text: 'hsl(262 83% 58%)', headerBg: 'hsl(262 83% 58% / 0.12)' },
@@ -514,6 +533,14 @@ export default function SanduqApp() {
     setFamilyNames(updated);
     localStorage.setItem('sanduq_family_names', JSON.stringify(updated));
     setEditingFamilyId(null);
+  };
+
+  const showMembersWithStatus = (status: string) => {
+    setFilterStatus(status);
+    setFilterMonth('all');
+    setSearchTerm('');
+    setViewMode('members');
+    setActiveTab('members');
   };
 
   return (
