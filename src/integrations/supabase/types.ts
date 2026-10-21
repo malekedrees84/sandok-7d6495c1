@@ -98,6 +98,72 @@ export type Database = {
         }
         Relationships: []
       }
+      grant_applications: {
+        Row: {
+          address: string
+          applicant_name: string
+          attachments: Json
+          category: string
+          created_at: string
+          id: string
+          phone: string
+          reason: string
+          requested_amount: number
+          review_notes: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          address?: string
+          applicant_name: string
+          attachments?: Json
+          category: string
+          created_at?: string
+          id?: string
+          phone: string
+          reason: string
+          requested_amount: number
+          review_notes?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          address?: string
+          applicant_name?: string
+          attachments?: Json
+          category?: string
+          created_at?: string
+          id?: string
+          phone?: string
+          reason?: string
+          requested_amount?: number
+          review_notes?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      grant_submission_limits: {
+        Row: {
+          attempts: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          key: string
+          window_start?: string
+        }
+        Update: {
+          attempts?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       login_attempts: {
         Row: {
           attempts: number
@@ -281,6 +347,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_grant_submission: {
+        Args: { attempt_key: string }
+        Returns: boolean
+      }
       consume_login_attempt: { Args: { attempt_key: string }; Returns: boolean }
       has_role: {
         Args: {
