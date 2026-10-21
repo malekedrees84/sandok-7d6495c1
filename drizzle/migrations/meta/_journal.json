@@ -8,6 +8,13 @@
       "when": 1792612228818,
       "tag": "0000_protected_master_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792615838241,
+      "tag": "0001_add_private_grant_applications",
+      "breakpoints": true
     }
   ]
 }

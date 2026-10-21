@@ -31,6 +31,9 @@ import { db } from './services/db';
 import { autoSnapshotIfDue } from './services/localSnapshots';
 import { supabase } from '@/integrations/supabase/client';
 import { getStaffRole } from './services/auth';
+import { Button } from '@/components/ui/button';
+import { GrantApplicationModal } from './components/GrantApplicationModal';
+import { GrantReviewModal } from './components/GrantReviewModal';
 
 const STORAGE_KEYS = {
   TICKER_DIRECTION: 'sanduq_ticker_direction', TICKER_SPEED: 'sanduq_ticker_speed'
@@ -88,6 +91,8 @@ export default function SanduqApp() {
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
   const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
   const [isFundUpdateOpen, setIsFundUpdateOpen] = useState(false);
+  const [isGrantOpen, setIsGrantOpen] = useState(false);
+  const [isGrantReviewOpen, setIsGrantReviewOpen] = useState(false);
   const [isFamilyAssignOpen, setIsFamilyAssignOpen] = useState(false);
   const [isAddMemberMode, setIsAddMemberMode] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
@@ -599,6 +604,10 @@ export default function SanduqApp() {
 
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" onClick={() => setIsGrantOpen(true)}><FileSpreadsheet /> طلب منحة</Button>
+          {isAdmin && <Button size="sm" variant="outline" onClick={() => setIsGrantReviewOpen(true)}><ShieldCheck /> مراجعة طلبات المنح</Button>}
+        </div>
         {/* TABS */}
         <div className="flex gap-1 bg-secondary/60 p-1 rounded-xl w-full">
           {(['dashboard', 'members', 'expenses'] as const).map(t => (
@@ -1067,6 +1076,8 @@ export default function SanduqApp() {
       </button>
 
       {/* MODALS */}
+      <GrantApplicationModal isOpen={isGrantOpen} onClose={() => setIsGrantOpen(false)} />
+      {isAdmin && <GrantReviewModal isOpen={isGrantReviewOpen} onClose={() => setIsGrantReviewOpen(false)} />}
       <PublicInquiryModal isOpen={isPublicInquiryOpen} onClose={() => setIsPublicInquiryOpen(false)} members={members} onCheck={handlePublicCheck} />
       <PaymentsLogModal isOpen={isPaymentsLogOpen} onClose={() => setIsPaymentsLogOpen(false)} members={members} payments={payments} />
       <AuditLogsModal isOpen={isAuditLogsOpen} onClose={() => setIsAuditLogsOpen(false)} logs={auditLogs} />
