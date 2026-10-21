@@ -447,7 +447,7 @@ export default function SanduqApp() {
   });
 
   // Member counts: totals, family grouping and status breakdown
-  const memberStats = useMemo(() => {
+  const memberStats = (() => {
     const total = members.length;
     const heads = members.filter(m => !m.headMemberId);
     const depsOf = (id: string) => members.filter(d => d.headMemberId === id);
@@ -463,7 +463,7 @@ export default function SanduqApp() {
       else cleared++;
     });
     return { total, families: familyHeads.length, inFamilies, singles, cleared, current, late };
-  }, [members, familyNames]);
+  })();
 
   // Family color palette using HSL semantic tokens
   const familyColors = [
