@@ -118,7 +118,15 @@ export const compressImage = (file: File): Promise<string> => {
   });
 };
 
+// اسم ملف بختام التاريخ والساعة الحالية (وقت التنزيل) — بصيغة لا تحتوي رموز ممنوعة في أسماء الملفات
+export const downloadStamp = (d = new Date()) => {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}`;
+};
+
 export const generatePDF = (title: string, headers: string[], rows: (string | number)[][]) => {
+  const stamp = downloadStamp();
+  const docTitle = `${title} - ${stamp}`;
   // Simple table view in a new window for printing
   const styles = `
     <style>
