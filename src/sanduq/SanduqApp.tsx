@@ -161,7 +161,19 @@ export default function SanduqApp() {
   // Helper: run async DB op with saving indicator
   const withSaving = async (fn: () => Promise<void>) => {
     setIsSaving(true);
-    try { await fn(); } catch (e: any) { console.error(e); alert('⚠️ لم يتم الحفظ في قاعدة البيانات! تأكد من الاتصال وأعد المحاولة.\n' + (e?.message || '')); loadAllData(); }
+    setSaveNotice(null);
+    try {
+      await fn();
+      setSaveNotice({ type: 'success', message: 'تم الحفظ في قاعدة البيانات بنجاح ✓' });
+      setTimeout(() => setSaveNotice(prev => prev?.type === 'success' ? null : prev), 4000);
+    } catch (e: any) {
+      console.error(e);
+      setSaveNotice({
+        type: 'error',
+        message: '⚠️ لم يتم الحفظ! قاعدة البيانات غير متاحة حالياً — البيانات لم تُسجل. تأكد من الاتصال وأعد المحاولة.' + (e?.message ? ` (${e.message})` : ''),
+      });
+      loadAllData();
+    }
     setIsSaving(false);
   };
 
