@@ -50,6 +50,7 @@ export default function SanduqApp() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [saveNotice, setSaveNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showSplash, setShowSplash] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'members' | 'expenses'>('dashboard');
