@@ -50,6 +50,7 @@ export default function SanduqApp() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [saveNotice, setSaveNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showSplash, setShowSplash] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'members' | 'expenses'>('dashboard');
@@ -160,7 +161,19 @@ export default function SanduqApp() {
   // Helper: run async DB op with saving indicator
   const withSaving = async (fn: () => Promise<void>) => {
     setIsSaving(true);
-    try { await fn(); } catch (e: any) { console.error(e); alert('⚠️ لم يتم الحفظ في قاعدة البيانات! تأكد من الاتصال وأعد المحاولة.\n' + (e?.message || '')); loadAllData(); }
+    setSaveNotice(null);
+    try {
+      await fn();
+      setSaveNotice({ type: 'success', message: 'تم الحفظ في قاعدة البيانات بنجاح ✓' });
+      setTimeout(() => setSaveNotice(prev => prev?.type === 'success' ? null : prev), 4000);
+    } catch (e: any) {
+      console.error(e);
+      setSaveNotice({
+        type: 'error',
+        message: '⚠️ لم يتم الحفظ! قاعدة البيانات غير متاحة حالياً — البيانات لم تُسجل. تأكد من الاتصال وأعد المحاولة.' + (e?.message ? ` (${e.message})` : ''),
+      });
+      loadAllData();
+    }
     setIsSaving(false);
   };
 
@@ -600,6 +613,29 @@ export default function SanduqApp() {
       </header>
 
       <CloudStatusBanner />
+
+      {/* Save notification toast */}
+      {saveNotice && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-md animate-fade-in" role="alert">
+          <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-xl ${
+            saveNotice.type === 'success'
+              ? 'bg-[hsl(var(--success))]/15 border-[hsl(var(--success))]/40 text-foreground'
+              : 'bg-destructive/15 border-destructive/50 text-foreground animate-pulse'
+          }`}>
+            <span className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-black ${
+              saveNotice.type === 'success' ? 'bg-[hsl(var(--success))] text-white' : 'bg-destructive text-destructive-foreground'
+            }`}>
+              {saveNotice.type === 'success' ? '✓' : '!'}
+            </span>
+            <p className="flex-1 text-sm font-bold leading-relaxed">{saveNotice.message}</p>
+            <button
+              onClick={() => setSaveNotice(null)}
+              className="shrink-0 rounded-full px-2 py-0.5 text-lg leading-none text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="إغلاق التنبيه"
+            >×</button>
+          </div>
+        </div>
+      )}
 
 
 
