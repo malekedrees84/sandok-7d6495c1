@@ -614,6 +614,29 @@ export default function SanduqApp() {
 
       <CloudStatusBanner />
 
+      {/* Save notification toast */}
+      {saveNotice && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-md animate-fade-in" role="alert">
+          <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-xl ${
+            saveNotice.type === 'success'
+              ? 'bg-[hsl(var(--success))]/15 border-[hsl(var(--success))]/40 text-foreground'
+              : 'bg-destructive/15 border-destructive/50 text-foreground animate-pulse'
+          }`}>
+            <span className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-black ${
+              saveNotice.type === 'success' ? 'bg-[hsl(var(--success))] text-white' : 'bg-destructive text-destructive-foreground'
+            }`}>
+              {saveNotice.type === 'success' ? '✓' : '!'}
+            </span>
+            <p className="flex-1 text-sm font-bold leading-relaxed">{saveNotice.message}</p>
+            <button
+              onClick={() => setSaveNotice(null)}
+              className="shrink-0 rounded-full px-2 py-0.5 text-lg leading-none text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="إغلاق التنبيه"
+            >×</button>
+          </div>
+        </div>
+      )}
+
 
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
